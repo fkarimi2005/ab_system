@@ -4,6 +4,7 @@ import (
 	"AB_system/internal/domain/models"
 	"AB_system/internal/domain/service"
 	"AB_system/internal/http/dto"
+	"AB_system/internal/http/middlewares"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -19,10 +20,11 @@ func NewFeatureFlagHandler(svc *service.FeatureFlagService) *FeatureFlagHandler 
 
 func (h *FeatureFlagHandler) Register(r *gin.RouterGroup) {
 	g := r.Group("/feature-flags")
-	g.POST("", h.Create)
+	write := middlewares.RequireRole(models.RoleAdmin, models.RoleExperimenter)
+	g.POST("", write, h.Create)
 	g.GET("", h.List)
 	g.GET("/:id", h.Get)
-	g.PATCH("/:id/default", h.UpdateDefault)
+	g.PATCH("/:id/default", write, h.UpdateDefault)
 }
 
 func (h *FeatureFlagHandler) Create(c *gin.Context) {

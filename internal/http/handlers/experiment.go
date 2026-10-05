@@ -1,8 +1,10 @@
 package handler
 
 import (
+	"AB_system/internal/domain/models"
 	"AB_system/internal/domain/service"
 	"AB_system/internal/http/dto"
+	"AB_system/internal/http/middlewares"
 	"github.com/gin-gonic/gin"
 	"net/http"
 )
@@ -16,10 +18,11 @@ func NewExperimentHandler(svc *service.ExperimentService) *ExperimentHandler {
 }
 func (h *ExperimentHandler) Register(r *gin.RouterGroup) {
 	g := r.Group("/experiments")
-	g.POST("", h.Create)
+	write := middlewares.RequireRole(models.RoleAdmin, models.RoleExperimenter)
+	g.POST("", write, h.Create)
 	g.GET("", h.List)
 	g.GET("/:id", h.Get)
-	g.PUT("/:id", h.Update)
+	g.PUT("/:id", write, h.Update)
 }
 func (h *ExperimentHandler) Create(c *gin.Context) {
 	var req dto.CreateExperimentRequest
@@ -27,11 +30,11 @@ func (h *ExperimentHandler) Create(c *gin.Context) {
 		writeBadRequest(c, err)
 		return
 	}
-	ownerID, ok := currentUserID(c)
+	actor, ok := currentActor(c)
 	if !ok {
 		return
 	}
-	e, err := h.svc.CreateExperiment(c.Request.Context(), ownerID, req.ToInput())
+	e, err := h.svc.CreateExperiment(c.Request.Context(), actor.ID, req.ToInput())
 	if err != nil {
 		writeError(c, err)
 		return
@@ -69,7 +72,7 @@ func (h *ExperimentHandler) Update(c *gin.Context) {
 	if !ok {
 		return
 	}
-	actorID, ok := currentUserID(c)
+	actor, ok := currentActor(c)
 	if !ok {
 		return
 	}
@@ -80,7 +83,7 @@ func (h *ExperimentHandler) Update(c *gin.Context) {
 	}
 
 	ctx := c.Request.Context()
-	if err := h.svc.UpdateExperiment(ctx, id, actorID, req.ToInput()); err != nil {
+	if err := h.svc.UpdateExperiment(ctx, id, actor, req.ToInput()); err != nil {
 		writeError(c, err)
 		return
 	}

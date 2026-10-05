@@ -5,6 +5,7 @@ import (
 	"AB_system/internal/domain/service"
 	service2 "AB_system/internal/domain/service/input"
 	"AB_system/internal/http/dto"
+	"AB_system/internal/http/middlewares"
 	"github.com/gin-gonic/gin"
 	"net/http"
 )
@@ -19,11 +20,12 @@ func NewUsersHandler(svc *service.UserService) *UsersHandler {
 func (h *UsersHandler) Register(r *gin.RouterGroup) {
 	//В Register стоят PUT и DELETE. Мы решили PATCH и без удаления (деактивация через is_active).
 	g := r.Group("/users")
-	g.POST("", h.Create)
-	g.GET("", h.List)
-	g.GET("/:id", h.Get)
-	g.PUT("/:id", h.Update)
-	g.DELETE("/:id", h.Delete)
+	admin := middlewares.RequireRole(models.RoleAdmin)
+	g.POST("", admin, h.Create)
+	g.GET("", admin, h.List)
+	g.GET("/:id", admin, h.Get)
+	g.PUT("/:id", admin, h.Update)
+	g.DELETE("/:id", admin, h.Delete)
 }
 func (h *UsersHandler) Create(c *gin.Context) {
 	var req dto.UserRequest
@@ -31,11 +33,15 @@ func (h *UsersHandler) Create(c *gin.Context) {
 		writeBadRequest(c, err)
 		return
 	}
-	user, err := h.svc.CreateUser(c, models.User{
+	isActive := true
+	if req.IsActive != nil {
+		isActive = *req.IsActive
+	}
+	user, err := h.svc.CreateUser(c.Request.Context(), models.User{
 		Email:    req.Email,
 		Name:     req.Name,
 		RoleID:   req.RoleID,
-		IsActive: req.IsActive,
+		IsActive: isActive,
 	})
 	if err != nil {
 		writeError(c, err)
@@ -78,9 +84,7 @@ func (h *UsersHandler) Delete(c *gin.Context) {
 		writeError(c, err)
 		return
 	}
-	c.JSON(http.StatusNoContent, gin.H{
-		"status": "deleted",
-	})
+	c.Status(http.StatusNoContent)
 }
 func (h *UsersHandler) Update(c *gin.Context) {
 	ID, ok := parseUUID(c, "id")
