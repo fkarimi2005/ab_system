@@ -48,13 +48,19 @@ func New(ctx context.Context, cfg configs.Config) (*App, error) {
 	ExperimentRepo := pgrepo.NewExperimentRepository(db)
 	ExperimentSvc := service.NewExperimentService(ExperimentRepo, flagRepo)
 
+	approvalRepo := pgrepo.NewExperimentApprovalRepository(db)
+	groupRepo := pgrepo.NewApproverGroupRepository(db)
+	lifecycleSvc := service.NewLifecycleService(ExperimentRepo, approvalRepo, groupRepo)
+	groupSvc := service.NewApproverGroupService(groupRepo, userRepo)
+
 	engine := router.New(router.Deps{
 		Health: handler.NewHealthHandler(sqlDB),
 		Auth:   middlewares.Authenticate(userRepo),
 		Handlers: []router.Registrar{
 			handler.NewFeatureFlagHandler(flagSvc),
 			handler.NewUsersHandler(userSvc),
-			handler.NewExperimentHandler(ExperimentSvc)},
+			handler.NewExperimentHandler(ExperimentSvc, lifecycleSvc),
+			handler.NewApproverGroupHandler(groupSvc)},
 	},
 	)
 
