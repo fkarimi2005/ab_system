@@ -1,0 +1,3267 @@
+================================================================================
+ФАЙЛ: C:\Users\Karimi\GolandProjects\AB_system\.env
+================================================================================
+CONFIG_PATH=configs/configs.json
+JWT_TTL_SECONDS=3600
+RANDOM_SECRET=my-secret-key-for-server-upload-file
+DB_HOST=localhost
+DB_PORT=5432
+DB_USER=postgres
+DB_PASSWORD=Firuzshoh2005
+DB_NAME=ab_system
+
+
+================================================================================
+ФАЙЛ: C:\Users\Karimi\GolandProjects\AB_system\go.mod
+================================================================================
+module AB_system
+
+go 1.26.2
+
+require (
+	github.com/gin-gonic/gin v1.12.0
+	github.com/google/uuid v1.6.0
+	github.com/joho/godotenv v1.5.1
+	gorm.io/driver/postgres v1.6.3
+	gorm.io/gorm v1.31.2
+)
+
+require (
+	github.com/bytedance/gopkg v0.1.3 // indirect
+	github.com/bytedance/sonic v1.15.0 // indirect
+	github.com/bytedance/sonic/loader v0.5.0 // indirect
+	github.com/cloudwego/base64x v0.1.6 // indirect
+	github.com/gabriel-vasile/mimetype v1.4.12 // indirect
+	github.com/gin-contrib/sse v1.1.0 // indirect
+	github.com/go-playground/locales v0.14.1 // indirect
+	github.com/go-playground/universal-translator v0.18.1 // indirect
+	github.com/go-playground/validator/v10 v10.30.1 // indirect
+	github.com/goccy/go-json v0.10.5 // indirect
+	github.com/goccy/go-yaml v1.19.2 // indirect
+	github.com/jackc/pgpassfile v1.0.0 // indirect
+	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect
+	github.com/jackc/pgx/v5 v5.10.0 // indirect
+	github.com/jackc/puddle/v2 v2.2.2 // indirect
+	github.com/jinzhu/inflection v1.0.0 // indirect
+	github.com/jinzhu/now v1.1.5 // indirect
+	github.com/json-iterator/go v1.1.12 // indirect
+	github.com/klauspost/cpuid/v2 v2.3.0 // indirect
+	github.com/leodido/go-urn v1.4.0 // indirect
+	github.com/mattn/go-isatty v0.0.20 // indirect
+	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
+	github.com/modern-go/reflect2 v1.0.2 // indirect
+	github.com/pelletier/go-toml/v2 v2.2.4 // indirect
+	github.com/quic-go/qpack v0.6.0 // indirect
+	github.com/quic-go/quic-go v0.59.0 // indirect
+	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
+	github.com/ugorji/go/codec v1.3.1 // indirect
+	go.mongodb.org/mongo-driver/v2 v2.5.0 // indirect
+	golang.org/x/arch v0.22.0 // indirect
+	golang.org/x/crypto v0.48.0 // indirect
+	golang.org/x/net v0.51.0 // indirect
+	golang.org/x/sync v0.19.0 // indirect
+	golang.org/x/sys v0.41.0 // indirect
+	golang.org/x/text v0.34.0 // indirect
+	google.golang.org/protobuf v1.36.10 // indirect
+)
+
+
+================================================================================
+ФАЙЛ: C:\Users\Karimi\GolandProjects\AB_system\go.sum
+================================================================================
+github.com/bytedance/gopkg v0.1.3 h1:TPBSwH8RsouGCBcMBktLt1AymVo2TVsBVCY4b6TnZ/M=
+github.com/bytedance/gopkg v0.1.3/go.mod h1:576VvJ+eJgyCzdjS+c4+77QF3p7ubbtiKARP3TxducM=
+github.com/bytedance/sonic v1.15.0 h1:/PXeWFaR5ElNcVE84U0dOHjiMHQOwNIx3K4ymzh/uSE=
+github.com/bytedance/sonic v1.15.0/go.mod h1:tFkWrPz0/CUCLEF4ri4UkHekCIcdnkqXw9VduqpJh0k=
+github.com/bytedance/sonic/loader v0.5.0 h1:gXH3KVnatgY7loH5/TkeVyXPfESoqSBSBEiDd5VjlgE=
+github.com/bytedance/sonic/loader v0.5.0/go.mod h1:AR4NYCk5DdzZizZ5djGqQ92eEhCCcdf5x77udYiSJRo=
+github.com/cloudwego/base64x v0.1.6 h1:t11wG9AECkCDk5fMSoxmufanudBtJ+/HemLstXDLI2M=
+github.com/cloudwego/base64x v0.1.6/go.mod h1:OFcloc187FXDaYHvrNIjxSe8ncn0OOM8gEHfghB2IPU=
+github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
+github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
+github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
+github.com/gabriel-vasile/mimetype v1.4.12 h1:e9hWvmLYvtp846tLHam2o++qitpguFiYCKbn0w9jyqw=
+github.com/gabriel-vasile/mimetype v1.4.12/go.mod h1:d+9Oxyo1wTzWdyVUPMmXFvp4F9tea18J8ufA774AB3s=
+github.com/gin-contrib/sse v1.1.0 h1:n0w2GMuUpWDVp7qSpvze6fAu9iRxJY4Hmj6AmBOU05w=
+github.com/gin-contrib/sse v1.1.0/go.mod h1:hxRZ5gVpWMT7Z0B0gSNYqqsSCNIJMjzvm6fqCz9vjwM=
+github.com/gin-gonic/gin v1.12.0 h1:b3YAbrZtnf8N//yjKeU2+MQsh2mY5htkZidOM7O0wG8=
+github.com/gin-gonic/gin v1.12.0/go.mod h1:VxccKfsSllpKshkBWgVgRniFFAzFb9csfngsqANjnLc=
+github.com/go-playground/assert/v2 v2.2.0 h1:JvknZsQTYeFEAhQwI4qEt9cyV5ONwRHC+lYKSsYSR8s=
+github.com/go-playground/assert/v2 v2.2.0/go.mod h1:VDjEfimB/XKnb+ZQfWdccd7VUvScMdVu0Titje2rxJ4=
+github.com/go-playground/locales v0.14.1 h1:EWaQ/wswjilfKLTECiXz7Rh+3BjFhfDFKv/oXslEjJA=
+github.com/go-playground/locales v0.14.1/go.mod h1:hxrqLVvrK65+Rwrd5Fc6F2O76J/NuW9t0sjnWqG1slY=
+github.com/go-playground/universal-translator v0.18.1 h1:Bcnm0ZwsGyWbCzImXv+pAJnYK9S473LQFuzCbDbfSFY=
+github.com/go-playground/universal-translator v0.18.1/go.mod h1:xekY+UJKNuX9WP91TpwSH2VMlDf28Uj24BCp08ZFTUY=
+github.com/go-playground/validator/v10 v10.30.1 h1:f3zDSN/zOma+w6+1Wswgd9fLkdwy06ntQJp0BBvFG0w=
+github.com/go-playground/validator/v10 v10.30.1/go.mod h1:oSuBIQzuJxL//3MelwSLD5hc2Tu889bF0Idm9Dg26cM=
+github.com/goccy/go-json v0.10.5 h1:Fq85nIqj+gXn/S5ahsiTlK3TmC85qgirsdTP/+DeaC4=
+github.com/goccy/go-json v0.10.5/go.mod h1:oq7eo15ShAhp70Anwd5lgX2pLfOS3QCiwU/PULtXL6M=
+github.com/goccy/go-yaml v1.19.2 h1:PmFC1S6h8ljIz6gMRBopkjP1TVT7xuwrButHID66PoM=
+github.com/goccy/go-yaml v1.19.2/go.mod h1:XBurs7gK8ATbW4ZPGKgcbrY1Br56PdM69F7LkFRi1kA=
+github.com/google/go-cmp v0.7.0 h1:wk8382ETsv4JYUZwIsn6YpYiWiBsYLSJiTsyBybVuN8=
+github.com/google/go-cmp v0.7.0/go.mod h1:pXiqmnSA92OHEEa9HXL2W4E7lf9JzCmGVUdgjX3N/iU=
+github.com/google/gofuzz v1.0.0/go.mod h1:dBl0BpW6vV/+mYPU4Po3pmUjxk6FQPldtuIdl/M65Eg=
+github.com/google/uuid v1.6.0 h1:NIvaJDMOsjHA8n1jAhLSgzrAzy1Hgr+hNrb57e+94F0=
+github.com/google/uuid v1.6.0/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+yHo=
+github.com/jackc/pgpassfile v1.0.0 h1:/6Hmqy13Ss2zCq62VdNG8tM1wchn8zjSGOBJ6icpsIM=
+github.com/jackc/pgpassfile v1.0.0/go.mod h1:CEx0iS5ambNFdcRtxPj5JhEz+xB6uRky5eyVu/W2HEg=
+github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 h1:iCEnooe7UlwOQYpKFhBabPMi4aNAfoODPEFNiAnClxo=
+github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761/go.mod h1:5TJZWKEWniPve33vlWYSoGYefn3gLQRzjfDlhSJ9ZKM=
+github.com/jackc/pgx/v5 v5.10.0 h1:VhSvgU2jSli8o3AqIEOTJr7rZwAEUVo4E4XhR94Zfr0=
+github.com/jackc/pgx/v5 v5.10.0/go.mod h1:mal1tBGAFfLHvZzaYh77YS/eC6IX9OWbRV1QIIM0Jn4=
+github.com/jackc/puddle/v2 v2.2.2 h1:PR8nw+E/1w0GLuRFSmiioY6UooMp6KJv0/61nB7icHo=
+github.com/jackc/puddle/v2 v2.2.2/go.mod h1:vriiEXHvEE654aYKXXjOvZM39qJ0q+azkZFrfEOc3H4=
+github.com/jinzhu/inflection v1.0.0 h1:K317FqzuhWc8YvSVlFMCCUb36O/S9MCKRDI7QkRKD/E=
+github.com/jinzhu/inflection v1.0.0/go.mod h1:h+uFLlag+Qp1Va5pdKtLDYj+kHp5pxUVkryuEj+Srlc=
+github.com/jinzhu/now v1.1.5 h1:/o9tlHleP7gOFmsnYNz3RGnqzefHA47wQpKrrdTIwXQ=
+github.com/jinzhu/now v1.1.5/go.mod h1:d3SSVoowX0Lcu0IBviAWJpolVfI5UJVZZ7cO71lE/z8=
+github.com/joho/godotenv v1.5.1 h1:7eLL/+HRGLY0ldzfGMeQkb7vMd0as4CfYvUVzLqw0N0=
+github.com/joho/godotenv v1.5.1/go.mod h1:f4LDr5Voq0i2e/R5DDNOoa2zzDfwtkZa6DnEwAbqwq4=
+github.com/json-iterator/go v1.1.12 h1:PV8peI4a0ysnczrg+LtxykD8LfKY9ML6u2jnxaEnrnM=
+github.com/json-iterator/go v1.1.12/go.mod h1:e30LSqwooZae/UwlEbR2852Gd8hjQvJoHmT4TnhNGBo=
+github.com/klauspost/cpuid/v2 v2.3.0 h1:S4CRMLnYUhGeDFDqkGriYKdfoFlDnMtqTiI/sFzhA9Y=
+github.com/klauspost/cpuid/v2 v2.3.0/go.mod h1:hqwkgyIinND0mEev00jJYCxPNVRVXFQeu1XKlok6oO0=
+github.com/leodido/go-urn v1.4.0 h1:WT9HwE9SGECu3lg4d/dIA+jxlljEa1/ffXKmRjqdmIQ=
+github.com/leodido/go-urn v1.4.0/go.mod h1:bvxc+MVxLKB4z00jd1z+Dvzr47oO32F/QSNjSBOlFxI=
+github.com/mattn/go-isatty v0.0.20 h1:xfD0iDuEKnDkl03q4limB+vH+GxLEtL/jb4xVJSWWEY=
+github.com/mattn/go-isatty v0.0.20/go.mod h1:W+V8PltTTMOvKvAeJH7IuucS94S2C6jfK/D7dTCTo3Y=
+github.com/mattn/go-sqlite3 v1.14.22 h1:2gZY6PC6kBnID23Tichd1K+Z0oS6nE/XwU+Vz/5o4kU=
+github.com/mattn/go-sqlite3 v1.14.22/go.mod h1:Uh1q+B4BYcTPb+yiD3kU8Ct7aC0hY9fxUwlHK0RXw+Y=
+github.com/modern-go/concurrent v0.0.0-20180228061459-e0a39a4cb421/go.mod h1:6dJC0mAP4ikYIbvyc7fijjWJddQyLn8Ig3JB5CqoB9Q=
+github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd h1:TRLaZ9cD/w8PVh93nsPXa1VrQ6jlwL5oN8l14QlcNfg=
+github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd/go.mod h1:6dJC0mAP4ikYIbvyc7fijjWJddQyLn8Ig3JB5CqoB9Q=
+github.com/modern-go/reflect2 v1.0.2 h1:xBagoLtFs94CBntxluKeaWgTMpvLxC4ur3nMaC9Gz0M=
+github.com/modern-go/reflect2 v1.0.2/go.mod h1:yWuevngMOJpCy52FWWMvUC8ws7m/LJsjYzDa0/r8luk=
+github.com/pelletier/go-toml/v2 v2.2.4 h1:mye9XuhQ6gvn5h28+VilKrrPoQVanw5PMw/TB0t5Ec4=
+github.com/pelletier/go-toml/v2 v2.2.4/go.mod h1:2gIqNv+qfxSVS7cM2xJQKtLSTLUE9V8t9Stt+h56mCY=
+github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
+github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
+github.com/quic-go/qpack v0.6.0 h1:g7W+BMYynC1LbYLSqRt8PBg5Tgwxn214ZZR34VIOjz8=
+github.com/quic-go/qpack v0.6.0/go.mod h1:lUpLKChi8njB4ty2bFLX2x4gzDqXwUpaO1DP9qMDZII=
+github.com/quic-go/quic-go v0.59.0 h1:OLJkp1Mlm/aS7dpKgTc6cnpynnD2Xg7C1pwL6vy/SAw=
+github.com/quic-go/quic-go v0.59.0/go.mod h1:upnsH4Ju1YkqpLXC305eW3yDZ4NfnNbmQRCMWS58IKU=
+github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
+github.com/stretchr/objx v0.4.0/go.mod h1:YvHI0jy2hoMjB+UWwv71VJQ9isScKT/TqJzVSSt89Yw=
+github.com/stretchr/objx v0.5.0/go.mod h1:Yh+to48EsGEfYuaHDzXPcE3xhTkx73EhmCGUpEOglKo=
+github.com/stretchr/objx v0.5.2/go.mod h1:FRsXN1f5AsAjCGJKqEizvkpNtU+EGNCLh3NxZ/8L+MA=
+github.com/stretchr/testify v1.3.0/go.mod h1:M5WIy9Dh21IEIfnGCwXGc5bZfKNJtfHm1UVUgZn+9EI=
+github.com/stretchr/testify v1.7.0/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
+github.com/stretchr/testify v1.7.1/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
+github.com/stretchr/testify v1.8.0/go.mod h1:yNjHg4UonilssWZ8iaSj1OCr/vHnekPRkoO+kdMU+MU=
+github.com/stretchr/testify v1.8.4/go.mod h1:sz/lmYIOXD/1dqDmKjjqLyZ2RngseejIcXlSw2iwfAo=
+github.com/stretchr/testify v1.10.0/go.mod h1:r2ic/lqez/lEtzL7wO/rwa5dbSLXVDPFyf8C91i36aY=
+github.com/stretchr/testify v1.11.1 h1:7s2iGBzp5EwR7/aIZr8ao5+dra3wiQyKjjFuvgVKu7U=
+github.com/stretchr/testify v1.11.1/go.mod h1:wZwfW3scLgRK+23gO65QZefKpKQRnfz6sD981Nm4B6U=
+github.com/twitchyliquid64/golang-asm v0.15.1 h1:SU5vSMR7hnwNxj24w34ZyCi/FmDZTkS4MhqMhdFk5YI=
+github.com/twitchyliquid64/golang-asm v0.15.1/go.mod h1:a1lVb/DtPvCB8fslRZhAngC2+aY1QWCk3Cedj/Gdt08=
+github.com/ugorji/go/codec v1.3.1 h1:waO7eEiFDwidsBN6agj1vJQ4AG7lh2yqXyOXqhgQuyY=
+github.com/ugorji/go/codec v1.3.1/go.mod h1:pRBVtBSKl77K30Bv8R2P+cLSGaTtex6fsA2Wjqmfxj4=
+go.mongodb.org/mongo-driver/v2 v2.5.0 h1:yXUhImUjjAInNcpTcAlPHiT7bIXhshCTL3jVBkF3xaE=
+go.mongodb.org/mongo-driver/v2 v2.5.0/go.mod h1:yOI9kBsufol30iFsl1slpdq1I0eHPzybRWdyYUs8K/0=
+go.uber.org/mock v0.6.0 h1:hyF9dfmbgIX5EfOdasqLsWD6xqpNZlXblLB/Dbnwv3Y=
+go.uber.org/mock v0.6.0/go.mod h1:KiVJ4BqZJaMj4svdfmHM0AUx4NJYO8ZNpPnZn1Z+BBU=
+golang.org/x/arch v0.22.0 h1:c/Zle32i5ttqRXjdLyyHZESLD/bB90DCU1g9l/0YBDI=
+golang.org/x/arch v0.22.0/go.mod h1:dNHoOeKiyja7GTvF9NJS1l3Z2yntpQNzgrjh1cU103A=
+golang.org/x/crypto v0.48.0 h1:/VRzVqiRSggnhY7gNRxPauEQ5Drw9haKdM0jqfcCFts=
+golang.org/x/crypto v0.48.0/go.mod h1:r0kV5h3qnFPlQnBSrULhlsRfryS2pmewsg+XfMgkVos=
+golang.org/x/net v0.51.0 h1:94R/GTO7mt3/4wIKpcR5gkGmRLOuE/2hNGeWq/GBIFo=
+golang.org/x/net v0.51.0/go.mod h1:aamm+2QF5ogm02fjy5Bb7CQ0WMt1/WVM7FtyaTLlA9Y=
+golang.org/x/sync v0.19.0 h1:vV+1eWNmZ5geRlYjzm2adRgW2/mcpevXNg50YZtPCE4=
+golang.org/x/sync v0.19.0/go.mod h1:9KTHXmSnoGruLpwFjVSX0lNNA75CykiMECbovNTZqGI=
+golang.org/x/sys v0.6.0/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
+golang.org/x/sys v0.41.0 h1:Ivj+2Cp/ylzLiEU89QhWblYnOE9zerudt9Ftecq2C6k=
+golang.org/x/sys v0.41.0/go.mod h1:OgkHotnGiDImocRcuBABYBEXf8A9a87e/uXjp9XT3ks=
+golang.org/x/text v0.34.0 h1:oL/Qq0Kdaqxa1KbNeMKwQq0reLCCaFtqu2eNuSeNHbk=
+golang.org/x/text v0.34.0/go.mod h1:homfLqTYRFyVYemLBFl5GgL/DWEiH5wcsQ5gSh1yziA=
+google.golang.org/protobuf v1.36.10 h1:AYd7cD/uASjIL6Q9LiTjz8JLcrh/88q5UObnmY3aOOE=
+google.golang.org/protobuf v1.36.10/go.mod h1:HTf+CrKn2C3g5S8VImy6tdcUvCska2kB7j23XfzDpco=
+gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=
+gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c/go.mod h1:K4uyk7z7BCEPqu6E+C64Yfv1cQ7kz7rIZviUmN+EgEM=
+gopkg.in/yaml.v3 v3.0.1 h1:fxVm/GzAzEWqLHuvctI91KS9hhNmmWOoWu0XTYJS7CA=
+gopkg.in/yaml.v3 v3.0.1/go.mod h1:K4uyk7z7BCEPqu6E+C64Yfv1cQ7kz7rIZviUmN+EgEM=
+gorm.io/driver/postgres v1.6.3 h1:bAn6O2pUa8LtpWEvL5NFU4+52Tfx8Ut7IVaIacCLcI0=
+gorm.io/driver/postgres v1.6.3/go.mod h1:0c4fQA44XhOklXDkgtuKqysHCycTa5i9e3EIpDGCwXk=
+gorm.io/driver/sqlite v1.6.0 h1:WHRRrIiulaPiPFmDcod6prc4l2VGVWHz80KspNsxSfQ=
+gorm.io/driver/sqlite v1.6.0/go.mod h1:AO9V1qIQddBESngQUKWL9yoH93HIeA1X6V633rBwyT8=
+gorm.io/gorm v1.31.2 h1:3o8FXNo9v9S858gil+3LlZA1LkCOzgb4g5BL64FgaCo=
+gorm.io/gorm v1.31.2/go.mod h1:XyQVbO2k6YkOis7C2437jSit3SsDK72s7n7rsSHd+Gs=
+
+
+================================================================================
+ФАЙЛ: C:\Users\Karimi\GolandProjects\AB_system\cmd\ab\main.go
+================================================================================
+package main
+
+import (
+	"context"
+	"log/slog"
+	"os"
+	"os/signal"
+	"syscall"
+
+	"AB_system/internal/app"
+	"AB_system/internal/configs"
+	"AB_system/logger"
+
+	"github.com/joho/godotenv"
+)
+
+func main() {
+	if err := run(); err != nil {
+		slog.Error("fatal", "err", err)
+		os.Exit(1)
+	}
+}
+
+func run() error {
+	_ = godotenv.Load()
+
+	cfg := configs.Load()
+	logger.Init(cfg.LogLevel)
+
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	a, err := app.New(ctx, cfg)
+	if err != nil {
+		return err
+	}
+	return a.Run(ctx)
+}
+
+
+================================================================================
+ФАЙЛ: C:\Users\Karimi\GolandProjects\AB_system\internal\app\app.go
+================================================================================
+package app
+
+import (
+	"context"
+	"errors"
+	"log/slog"
+
+	"AB_system/internal/configs"
+	"AB_system/internal/domain/service"
+	handler "AB_system/internal/http/handlers"
+	"AB_system/internal/http/router"
+	pgrepo "AB_system/internal/repository/postgres"
+	"AB_system/internal/server"
+	database "AB_system/pkg/db/postgres"
+
+	"gorm.io/gorm"
+)
+
+type App struct {
+	db     *gorm.DB
+	server *server.Server
+}
+
+func New(ctx context.Context, cfg configs.Config) (*App, error) {
+	db, err := database.ConnectDB(ctx, cfg.DB)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := database.Migrate(db); err != nil {
+		_ = database.CloseDB(db)
+		return nil, err
+	}
+
+	sqlDB, err := db.DB()
+	if err != nil {
+		_ = database.CloseDB(db)
+		return nil, err
+	}
+
+	flagRepo := pgrepo.NewFeatureFlagRepository(db)
+	flagSvc := service.NewFeatureFlagService(flagRepo)
+	roleRepo := pgrepo.NewRoleRepository(db)
+	//roleSvc := service.NewRoleService(roleRepo)
+	userRepo := pgrepo.NewUserRepository(db)
+	userSvc := service.NewUserService(userRepo, roleRepo)
+	ExperimentRepo := pgrepo.NewExperimentRepository(db)
+	ExperimentSvc := service.NewExperimentService(ExperimentRepo, flagRepo)
+
+	engine := router.New(router.Deps{
+		Health: handler.NewHealthHandler(sqlDB),
+		Handlers: []router.Registrar{
+			handler.NewFeatureFlagHandler(flagSvc),
+			handler.NewUsersHandler(userSvc),
+			handler.NewExperimentHandler(ExperimentSvc)},
+	},
+	)
+
+	return &App{
+		db:     db,
+		server: server.New(cfg.Port, engine),
+	}, nil
+}
+
+func (a *App) Run(ctx context.Context) error {
+	errCh := make(chan error, 1)
+	go func() { errCh <- a.server.Run() }()
+
+	select {
+	case err := <-errCh:
+		return errors.Join(err, database.CloseDB(a.db))
+	case <-ctx.Done():
+	}
+
+	slog.Info("shutting down")
+	shutdownErr := a.server.Shutdown(context.Background())
+	closeErr := database.CloseDB(a.db)
+	return errors.Join(shutdownErr, closeErr)
+}
+
+
+================================================================================
+ФАЙЛ: C:\Users\Karimi\GolandProjects\AB_system\internal\configs\configs.go
+================================================================================
+package configs
+
+import "os"
+
+type Config struct {
+	Port     string
+	LogLevel string
+	DB       DB
+}
+
+type DB struct {
+	Host, Port, User, Password, Name string
+}
+
+func Load() Config {
+	return Config{
+		Port:     get("APP_PORT", "8083"),
+		LogLevel: get("LOG_LEVEL", "info"),
+		DB: DB{
+			Host:     get("DB_HOST", "localhost"),
+			Port:     get("DB_PORT", "5432"),
+			User:     get("DB_USER", "postgres"),
+			Password: get("DB_PASSWORD", ""),
+			Name:     get("DB_NAME", "ab_system"),
+		},
+	}
+}
+func get(key, def string) string {
+	if v := os.Getenv(key); v != "" {
+		return v
+	}
+	return def
+}
+
+
+================================================================================
+ФАЙЛ: C:\Users\Karimi\GolandProjects\AB_system\internal\domain\models\.md
+================================================================================
+Да. Давай зафиксируем **API endpoints для первых 5 сущностей** так, чтобы потом по ним удобно было писать Handler → Service → Repository.
+
+## 1. Roles
+
+Роли: `admin`, `experimenter`, `approver`, `viewer`.
+
+```text
+GET    /roles
+GET    /roles/:id
+
+POST   /roles
+PUT    /roles/:id
+DELETE /roles/:id
+```
+
+### Примеры
+
+```http
+GET /roles
+```
+
+```http
+GET /roles/:id
+```
+
+```http
+POST /roles
+```
+
+```json
+{
+  "name": "experimenter"
+}
+```
+
+---
+
+# 2. Users
+
+```text
+POST   /users
+GET    /users
+GET    /users/:id
+PUT    /users/:id
+DELETE /users/:id
+```
+
+Дополнительно удобно:
+
+```text
+GET /users?role=approver
+```
+
+### Создание User
+
+```http
+POST /users
+```
+
+```json
+{
+  "name": "Firuz Karimzoda",
+  "email": "firuz@example.com",
+  "roleId": "uuid"
+}
+```
+
+### Обновление
+
+```http
+PUT /users/:id
+```
+
+```json
+{
+  "name": "Firuz Karimzoda",
+  "roleId": "uuid"
+}
+```
+
+---
+
+# 3. Feature Flags
+
+Основные endpoints:
+
+```text
+POST   /feature-flags
+GET    /feature-flags
+GET    /feature-flags/:id
+PUT    /feature-flags/:id
+DELETE /feature-flags/:id
+```
+
+Но здесь есть важное ограничение из ТЗ:
+
+> После создания Feature Flag можно менять только `defaultValue`.
+
+Поэтому я рекомендую сделать отдельный endpoint:
+
+```text
+PATCH /feature-flags/:id/default
+```
+
+### Создание
+
+```http
+POST /feature-flags
+```
+
+```json
+{
+  "key": "button_color",
+  "valueType": "string",
+  "defaultValue": "green"
+}
+```
+
+Другой пример:
+
+```json
+{
+  "key": "new_checkout",
+  "valueType": "bool",
+  "defaultValue": "false"
+}
+```
+
+### Изменение default value
+
+```http
+PATCH /feature-flags/:id/default
+```
+
+```json
+{
+  "value": "blue"
+}
+```
+
+`key` и `valueType` после создания не меняем.
+
+---
+
+# 4. Experiments
+
+Основные:
+
+```text
+POST   /experiments
+GET    /experiments
+GET    /experiments/:id
+PUT    /experiments/:id
+DELETE /experiments/:id
+```
+
+Lifecycle:
+
+```text
+POST /experiments/:id/transition
+```
+
+Например:
+
+```json
+{
+  "status": "review"
+}
+```
+
+Review:
+
+```text
+POST /experiments/:id/approve
+POST /experiments/:id/request-changes
+POST /experiments/:id/reject
+GET  /experiments/:id/approvals
+```
+
+Versions:
+
+```text
+GET /experiments/:id/versions
+GET /experiments/:id/versions/:version
+```
+
+Завершение:
+
+```text
+POST /experiments/:id/complete
+```
+
+### Создание Experiment
+
+```http
+POST /experiments
+```
+
+```json
+{
+  "featureFlagId": "uuid",
+  "name": "Button Color Experiment",
+  "audiencePercent": 20,
+  "variants": [
+    {
+      "name": "blue",
+      "value": "blue",
+      "weight": 10,
+      "isControl": true
+    },
+    {
+      "name": "red",
+      "value": "red",
+      "weight": 10,
+      "isControl": false
+    }
+  ]
+}
+```
+
+Здесь сервис должен проверить:
+
+```text
+audiencePercent = 20
+
+10 + 10 = 20  ✅
+
+control variants = 1  ✅
+```
+
+---
+
+# 5. Variants
+
+Variants принадлежат Experiment, поэтому URL делаем вложенным:
+
+```text
+POST   /experiments/:id/variants
+GET    /experiments/:id/variants
+GET    /experiments/:id/variants/:variantId
+PUT    /experiments/:id/variants/:variantId
+DELETE /experiments/:id/variants/:variantId
+```
+
+### Создание Variant
+
+```http
+POST /experiments/:id/variants
+```
+
+```json
+{
+  "name": "blue",
+  "value": "blue",
+  "weight": 10,
+  "isControl": true
+}
+```
+
+### Обновление
+
+```http
+PUT /experiments/:id/variants/:variantId
+```
+
+```json
+{
+  "name": "red",
+  "value": "red",
+  "weight": 10,
+  "isControl": false
+}
+```
+
+Но сервис должен проверить, что эксперимент позволяет это изменение. Например, если Experiment уже `running`, менять allocation-параметры нельзя.
+
+---
+
+# Общая структура
+
+В итоге первые 5 модулей выглядят так:
+
+```text
+/roles
+    GET    /
+    GET    /:id
+    POST   /
+    PUT    /:id
+    DELETE /:id
+
+/users
+    POST   /
+    GET    /
+    GET    /:id
+    PUT    /:id
+    DELETE /:id
+
+/feature-flags
+    POST   /
+    GET    /
+    GET    /:id
+    PUT    /:id
+    DELETE /:id
+    PATCH  /:id/default
+
+/experiments
+    POST   /
+    GET    /
+    GET    /:id
+    PUT    /:id
+    DELETE /:id
+
+    POST   /:id/transition
+    POST   /:id/approve
+    POST   /:id/request-changes
+    POST   /:id/reject
+    GET    /:id/approvals
+
+    GET    /:id/versions
+    GET    /:id/versions/:version
+    POST   /:id/complete
+
+/experiments/:id/variants
+    POST   /
+    GET    /
+    GET    /:variantId
+    PUT    /:variantId
+    DELETE /:variantId
+```
+
+### Но есть один архитектурный момент
+
+Я бы **не делал `DELETE /experiments/:id` и `DELETE /feature-flags/:id` бездумно**.
+
+У тебя есть lifecycle и audit. Поэтому для Experiment правильнее:
+
+```text
+completed → archived
+```
+
+а не просто удалить запись из БД.
+
+И для Feature Flag нужно учитывать, что на него могут ссылаться Experiments.
+
+**Следующий шаг:** можно теперь сделать для этих 5 сущностей **точные Request/Response DTO** — какие поля принимает каждый endpoint и что возвращает. Это уже будет практически готовый контракт для frontend и Swagger.
+
+
+================================================================================
+ФАЙЛ: C:\Users\Karimi\GolandProjects\AB_system\internal\domain\models\experiments.go
+================================================================================
+package models
+
+import (
+	"github.com/google/uuid"
+	"gorm.io/gorm"
+	"time"
+)
+
+const FullAudienceBP = 10000 // 100% аудитории
+
+type Experiment struct {
+	ID            uuid.UUID        `json:"id" gorm:"primaryKey;type:uuid;default:gen_random_uuid()"`
+	FeatureFlagID uuid.UUID        `json:"feature_id" gorm:"type:uuid;not null;index"`
+	FeatureFlag   FeatureFlag      `json:"-" gorm:"foreignKey:FeatureFlagID;references:ID"`
+	Name          string           `json:"name" gorm:"not null;type:varchar(255)"`
+	Status        ExperimentStatus `json:"status" gorm:"not null;type:varchar(35);default:'draft'"`
+
+	AudienceBP int `json:"audience_bp" gorm:"not null;check:chk_experiments_audience,audience_bp > 0 AND audience_bp <= 10000"`
+
+	Version int       `json:"version" gorm:"not null;default:1"`
+	OwnerID uuid.UUID `json:"owner_id" gorm:"type:uuid;not null;index"`
+	User    User      `json:"-" gorm:"foreignKey:OwnerID;references:ID"`
+
+	Variants []ExperimentVariant `json:"variants" gorm:"foreignKey:ExperimentID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
+
+	CreatedAt time.Time      `json:"created_at" gorm:"autoCreateTime"`
+	UpdatedAt time.Time      `json:"updated_at" gorm:"autoUpdateTime"`
+	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`
+}
+
+type ExperimentVariant struct {
+	ID           uuid.UUID `json:"id" gorm:"primaryKey;type:uuid;default:gen_random_uuid()"`
+	ExperimentID uuid.UUID `json:"experiment_id" gorm:"type:uuid;not null;uniqueIndex:idx_variant_name"`
+	Name         string    `json:"name" gorm:"not null;type:varchar(255);uniqueIndex:idx_variant_name"`
+	Value        string    `json:"value" gorm:"not null;type:text"`
+
+	Weight    int  `json:"weight" gorm:"not null;check:chk_variants_weight,weight > 0"`
+	IsControl bool `json:"is_control" gorm:"not null;default:false"`
+
+	CreatedAt time.Time `json:"created_at" gorm:"autoCreateTime"`
+}
+type ExperimentStatus string
+
+const (
+	ExperimentStatusDraft     ExperimentStatus = "draft"
+	ExperimentStatusReview    ExperimentStatus = "review"
+	ExperimentStatusApproved  ExperimentStatus = "approved"
+	ExperimentStatusRunning   ExperimentStatus = "running"
+	ExperimentStatusPaused    ExperimentStatus = "paused"
+	ExperimentStatusCompleted ExperimentStatus = "completed"
+	ExperimentStatusArchived  ExperimentStatus = "archived"
+	ExperimentStatusRejected  ExperimentStatus = "rejected"
+)
+
+
+================================================================================
+ФАЙЛ: C:\Users\Karimi\GolandProjects\AB_system\internal\domain\models\experiment_approval.go
+================================================================================
+package models
+
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
+
+type ExperimentApproval struct {
+	ID           uuid.UUID `json:"id" gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
+	ExperimentID uuid.UUID `json:"experiment_id" gorm:"type:uuid;not null;index;uniqueIndex:idx_approval_once"`
+	ApproverID   uuid.UUID `json:"approver_id" gorm:"type:uuid;not null;index;uniqueIndex:idx_approval_once"`
+	Version      int       `json:"version" gorm:"not null;default:1;uniqueIndex:idx_approval_once"`
+
+	Status  ApprovalStatus `json:"status" gorm:"type:varchar(30);not null"`
+	Comment string         `json:"comment" gorm:"type:text"`
+
+	CreatedAt time.Time  `json:"created_at" gorm:"autoCreateTime"`
+	UpdatedAt time.Time  `json:"updated_at" gorm:"autoUpdateTime"`
+	DecidedAt *time.Time `json:"decided_at,omitempty"`
+
+	Experiment *Experiment `json:"-" gorm:"foreignKey:ExperimentID"`
+	Approver   *User       `json:"-" gorm:"foreignKey:ApproverID"`
+}
+type ApprovalStatus string
+
+const (
+	ApprovalPending       ApprovalStatus = "pending"
+	ApprovalApproved      ApprovalStatus = "approved"
+	ApprovalChangesNeeded ApprovalStatus = "changes_requested"
+	ApprovalRejected      ApprovalStatus = "rejected"
+)
+
+
+================================================================================
+ФАЙЛ: C:\Users\Karimi\GolandProjects\AB_system\internal\domain\models\experiment_versions.go
+================================================================================
+package models
+
+import (
+	"github.com/google/uuid"
+	"time"
+)
+
+type ExperimentVersion struct {
+	ID           uuid.UUID `gorm:"type:uuid;primaryKey;default:gen_random_uuid()"`
+	ExperimentID uuid.UUID `gorm:"type:uuid;not null;uniqueIndex:idx_exp_version"`
+	Version      int       `gorm:"not null;uniqueIndex:idx_exp_version"`
+	Snapshot     []byte    `gorm:"type:jsonb;not null"`
+	CreatedAt    time.Time `gorm:"autoCreateTime"`
+}
+
+
+================================================================================
+ФАЙЛ: C:\Users\Karimi\GolandProjects\AB_system\internal\domain\models\feature_flags.go
+================================================================================
+package models
+
+import (
+	"github.com/google/uuid"
+	"gorm.io/gorm"
+	"time"
+)
+
+type FeatureFlag struct {
+	ID           uuid.UUID      `json:"id" gorm:"primaryKey;type:uuid;default:gen_random_uuid()"`
+	Key          string         `json:"key" gorm:"type:varchar(255);not null;uniqueIndex:idx_feature_flags_key,where:deleted_at IS NULL"`
+	ValueType    string         `json:"value_type" gorm:"type:varchar(20);not null"`
+	DefaultValue string         `json:"default_value" gorm:"type:varchar(255);not null"`
+	CreatedAt    time.Time      `json:"created_at" gorm:"autoCreateTime"`
+	UpdatedAt    time.Time      `json:"updated_at" gorm:"autoUpdateTime"`
+	DeletedAt    gorm.DeletedAt `json:"-" gorm:"index"`
+}
+
+
+================================================================================
+ФАЙЛ: C:\Users\Karimi\GolandProjects\AB_system\internal\domain\models\users.go
+================================================================================
+package models
+
+import (
+	"github.com/google/uuid"
+	"gorm.io/gorm"
+	"time"
+)
+
+type Role struct {
+	ID        uuid.UUID      `json:"id" gorm:"primaryKey;type:uuid;default:gen_random_uuid()"`
+	RoleName  string         `json:"role_name" gorm:"unique;not null"`
+	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`
+}
+
+const (
+	RoleAdmin        = "admin"
+	RoleExperimenter = "experimenter"
+	RoleApprover     = "approver"
+	RoleViewer       = "viewer"
+)
+
+type User struct {
+	ID        uuid.UUID      `json:"id" gorm:"primaryKey;type:uuid;default:gen_random_uuid()"`
+	Email     string         `json:"email" gorm:"unique;not null"`
+	Name      string         `json:"name" gorm:"not null"`
+	RoleID    uuid.UUID      `json:"role_id" gorm:"type:uuid;index"`
+	Role      Role           `json:"role" gorm:"foreignKey:RoleID;references:ID"`
+	IsActive  bool           `json:"is_active" gorm:"default:true"`
+	CreatedAt time.Time      `json:"created_at" gorm:"autoCreateTime"`
+	UpdatedAt time.Time      `json:"updated_at" gorm:"autoUpdateTime"`
+	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`
+}
+
+
+================================================================================
+ФАЙЛ: C:\Users\Karimi\GolandProjects\AB_system\internal\domain\repository\approval.go
+================================================================================
+package repository
+
+import (
+	"AB_system/internal/domain/models"
+	"context"
+	"github.com/google/uuid"
+)
+
+type ApprovalRepository interface {
+	ApprovalReader
+	ApprovalWriter
+}
+type ApprovalWriter interface {
+	ApproveExperiment(
+		ctx context.Context,
+		experimentID uuid.UUID,
+		approverID uuid.UUID,
+	) error
+
+	RequestExperimentChanges(
+		ctx context.Context,
+		experimentID uuid.UUID,
+		approverID uuid.UUID,
+		comment string,
+	) error
+
+	RejectExperiment(
+		ctx context.Context,
+		experimentID uuid.UUID,
+		approverID uuid.UUID,
+		comment string,
+	) error
+}
+type ApprovalReader interface {
+	GetApprovalsByExperimentID(
+		ctx context.Context,
+		experimentID uuid.UUID,
+	) ([]models.ExperimentApproval, error)
+}
+
+
+================================================================================
+ФАЙЛ: C:\Users\Karimi\GolandProjects\AB_system\internal\domain\repository\experiments.go
+================================================================================
+package repository
+
+import (
+	"AB_system/internal/domain/models"
+	"context"
+	"github.com/google/uuid"
+)
+
+type ExperimentReader interface {
+	GetAllExperiments(
+		ctx context.Context,
+	) ([]models.Experiment, error)
+
+	GetExperimentByID(
+		ctx context.Context,
+		experimentID uuid.UUID,
+	) (models.Experiment, error)
+
+	ExperimentExists(
+		ctx context.Context,
+		experimentID uuid.UUID,
+	) (bool, error)
+}
+
+type ExperimentWriter interface {
+	CreateExperiment(
+		ctx context.Context,
+		experiment *models.Experiment,
+	) (*models.Experiment, error)
+
+	UpdateExperiment(
+		ctx context.Context,
+		experiment *models.Experiment,
+		expectedVersion int,
+		snapshot []byte,
+	) error
+}
+
+type ExperimentLifecycle interface {
+	TransitionExperiment(
+		ctx context.Context,
+		experimentID uuid.UUID,
+		status models.ExperimentStatus,
+	) error
+
+	CompleteExperiment(
+		ctx context.Context,
+		experimentID uuid.UUID,
+	) error
+}
+
+type ExperimentRepository interface {
+	ExperimentReader
+	ExperimentWriter
+	ExperimentLifecycle
+}
+
+
+================================================================================
+ФАЙЛ: C:\Users\Karimi\GolandProjects\AB_system\internal\domain\repository\feature_flags.go
+================================================================================
+package repository
+
+import (
+	"AB_system/internal/domain/models"
+	"context"
+	"github.com/google/uuid"
+)
+
+type FeatureFlagsReader interface {
+	GetAllFeatureFlags(
+		ctx context.Context,
+	) ([]models.FeatureFlag, error)
+	GetFeatureFlagByID(
+		ctx context.Context,
+		featureFlagID uuid.UUID,
+	) (models.FeatureFlag, error)
+	ExistsFeatureFlag(
+		ctx context.Context,
+		featureFlagID uuid.UUID,
+	) (bool, error)
+}
+type FeatureFlagsWriter interface {
+	CreateFeatureFlags(ctx context.Context, featureFlag *models.FeatureFlag) (*models.FeatureFlag, error)
+	DeleteFeatureFlag(ctx context.Context, featureFlagID uuid.UUID) error
+	UpdateFeatureFlagsDefaultValue(ctx context.Context, featureFlagID uuid.UUID, defaultValue string) error
+}
+type FeatureFlagsRepository interface {
+	FeatureFlagsReader
+	FeatureFlagsWriter
+}
+
+
+================================================================================
+ФАЙЛ: C:\Users\Karimi\GolandProjects\AB_system\internal\domain\repository\roles.go
+================================================================================
+package repository
+
+import (
+	"AB_system/internal/domain/models"
+	"context"
+	"github.com/google/uuid"
+)
+
+type RoleReader interface {
+	GetAllRoles(
+		ctx context.Context,
+	) ([]models.Role, error)
+	GetRoleByID(
+		ctx context.Context,
+		roleID uuid.UUID,
+	) (models.Role, error)
+	ExistsRole(
+		ctx context.Context,
+		roleID uuid.UUID,
+	) (bool, error)
+}
+
+type RoleDeleter interface {
+	DeleteRole(
+		ctx context.Context,
+		roleID uuid.UUID,
+	) error
+}
+type RoleRepository interface {
+	RoleReader
+	RoleDeleter
+}
+
+
+================================================================================
+ФАЙЛ: C:\Users\Karimi\GolandProjects\AB_system\internal\domain\repository\users.go
+================================================================================
+package repository
+
+import (
+	"AB_system/internal/domain/models"
+	"context"
+	"github.com/google/uuid"
+)
+
+type UserReader interface {
+	GetAllUser(
+		ctx context.Context,
+	) ([]models.User, error)
+	GetUserByID(
+		ctx context.Context,
+		ID uuid.UUID,
+	) (models.User, error)
+	ExistsUser(
+		ctx context.Context,
+		ID uuid.UUID,
+	) (bool, error)
+	ExistsUserByEmail(
+		ctx context.Context,
+		email string,
+	) (bool, error)
+}
+type UserWriter interface {
+	CreateUser(
+		ctx context.Context,
+		user *models.User,
+	) (*models.User, error)
+	UpdateUser(
+		ctx context.Context,
+		user *models.User,
+	) error
+}
+type UserDeleter interface {
+	DeleteUser(
+		ctx context.Context,
+		ID uuid.UUID,
+	) error
+}
+type UserRepository interface {
+	UserReader
+	UserWriter
+	UserDeleter
+}
+
+
+================================================================================
+ФАЙЛ: C:\Users\Karimi\GolandProjects\AB_system\internal\domain\service\experiments.go
+================================================================================
+package service
+
+import (
+	"AB_system/internal/domain/models"
+	"AB_system/internal/domain/repository"
+	"AB_system/internal/domain/service/input"
+	"AB_system/internal/domain/service/validation"
+	"AB_system/internal/http/dto"
+	"AB_system/pkg/errs"
+	"context"
+	"encoding/json"
+	"errors"
+	"github.com/google/uuid"
+)
+
+type ExperimentService struct {
+	experimentRepo repository.ExperimentRepository
+	flagRepo       repository.FeatureFlagsRepository
+}
+
+func NewExperimentService(experimentRepo repository.ExperimentRepository, flagRepo repository.FeatureFlagsRepository) *ExperimentService {
+	return &ExperimentService{experimentRepo: experimentRepo,
+		flagRepo: flagRepo}
+}
+func (s *ExperimentService) CreateExperiment(
+	ctx context.Context, ownerID uuid.UUID, in input.CreateExperimentInput,
+) (*models.Experiment, error) {
+
+	flag, err := s.flagRepo.GetFeatureFlagByID(ctx, in.FeatureFlagID)
+	if err != nil {
+		if errors.Is(err, errs.ErrRecordNotFound) {
+			return nil, errs.ErrFeatureFlagNotFound
+		}
+	}
+
+	variants := make([]models.ExperimentVariant, 0, len(in.Variants))
+	for _, v := range in.Variants {
+		variants = append(variants, models.ExperimentVariant{
+			Name:      v.Name,
+			Value:     v.Value,
+			Weight:    v.WeightBP,
+			IsControl: v.IsControl,
+		})
+	}
+
+	if err := validation.ValidateConfig(in.Name, in.AudienceBP, variants); err != nil {
+		return nil, err
+	}
+	if err := validation.ValidateVariantValues(flag.ValueType, variants); err != nil {
+		return nil, err
+	}
+
+	return s.experimentRepo.CreateExperiment(ctx, &models.Experiment{
+		FeatureFlagID: in.FeatureFlagID,
+		Name:          in.Name,
+		Status:        models.ExperimentStatusDraft, // задаёт сервер
+		AudienceBP:    in.AudienceBP,
+		Version:       1,       // задаёт сервер
+		OwnerID:       ownerID, // из авторизации
+		Variants:      variants,
+	})
+}
+func (s *ExperimentService) UpdateExperiment(
+	ctx context.Context, id, actorID uuid.UUID, in input.UpdateExperimentInput,
+) error {
+	cur, err := s.experimentRepo.GetExperimentByID(ctx, id)
+	if err != nil {
+		if errors.Is(err, errs.ErrRecordNotFound) {
+			return errs.ErrExperimentNotFound
+		}
+		return err
+	}
+	if cur.Status != models.ExperimentStatusDraft {
+		return errs.ErrExperimentNotEditable
+	}
+	if cur.OwnerID != actorID { // позже: или роль admin
+		return errs.ErrPermissionDenied
+	}
+
+	flag, err := s.flagRepo.GetFeatureFlagByID(ctx, cur.FeatureFlagID)
+	if err != nil {
+		return err
+	}
+
+	variants := dto.ToVariantModels(in.Variants)
+	if err := validation.ValidateConfig(in.Name, in.AudienceBP, variants); err != nil {
+		return err
+	}
+	if err := validation.ValidateVariantValues(flag.ValueType, variants); err != nil {
+		return err
+	}
+
+	oldVersion := cur.Version
+	cur.Name = in.Name
+	cur.AudienceBP = in.AudienceBP
+	cur.Variants = variants
+	cur.Version = oldVersion + 1
+
+	snapshot, err := json.Marshal(cur)
+	if err != nil {
+		return err
+	}
+	return s.experimentRepo.UpdateExperiment(ctx, &cur, oldVersion, snapshot)
+}
+
+func (s *ExperimentService) GetExperimentByID(ctx context.Context, id uuid.UUID) (models.Experiment, error) {
+
+	return s.experimentRepo.GetExperimentByID(ctx, id)
+}
+func (s *ExperimentService) GetExperiments(ctx context.Context) ([]models.Experiment, error) {
+	return s.experimentRepo.GetAllExperiments(ctx)
+
+}
+
+
+================================================================================
+ФАЙЛ: C:\Users\Karimi\GolandProjects\AB_system\internal\domain\service\feature_flags.go
+================================================================================
+package service
+
+import (
+	"AB_system/internal/domain/models"
+	"AB_system/internal/domain/repository"
+	"AB_system/internal/domain/service/validation"
+	"AB_system/pkg/errs"
+	"context"
+	"errors"
+	"github.com/google/uuid"
+)
+
+type FeatureFlagService struct {
+	featureFlagRepo repository.FeatureFlagsRepository
+}
+
+func NewFeatureFlagService(featureFlagRepo repository.FeatureFlagsRepository) *FeatureFlagService {
+	return &FeatureFlagService{featureFlagRepo: featureFlagRepo}
+}
+func (s *FeatureFlagService) CreateFeatureFlag(
+	ctx context.Context,
+	f *models.FeatureFlag,
+) (*models.FeatureFlag, error) {
+	if f.Key == "" {
+		return nil, errs.ErrKeyIsEmpty
+	}
+	if f.ValueType == "" {
+		return nil, errs.ErrValueTypeIsEmpty
+	}
+	if f.DefaultValue == "" {
+		return nil, errs.ErrDefaultValueIsEmpty
+	}
+	// проверяет и сам тип, и то, что значение ему соответствует
+	if err := validation.ValidateValue(f.ValueType, f.DefaultValue); err != nil {
+		return nil, err
+	}
+	return s.featureFlagRepo.CreateFeatureFlags(ctx, f)
+}
+func (s *FeatureFlagService) DeleteFeatureFlag(ctx context.Context,
+	featureFlagID uuid.UUID) error {
+	if featureFlagID == uuid.Nil {
+		return errs.ErrIdIsEmpty
+	}
+	exist, err := s.featureFlagRepo.ExistsFeatureFlag(ctx, featureFlagID)
+	if err != nil {
+		return err
+	}
+	if !exist {
+		return errs.ErrFeatureFlagNotFound
+	}
+	return s.featureFlagRepo.DeleteFeatureFlag(ctx, featureFlagID)
+}
+func (s *FeatureFlagService) GetFeatureFlag(ctx context.Context,
+	featureFlagID uuid.UUID,
+) (models.FeatureFlag, error) {
+	if featureFlagID == uuid.Nil {
+		return models.FeatureFlag{}, errs.ErrIdIsEmpty
+	}
+	exist, err := s.featureFlagRepo.ExistsFeatureFlag(ctx, featureFlagID)
+	if err != nil {
+		return models.FeatureFlag{}, err
+	}
+	if !exist {
+		return models.FeatureFlag{}, errs.ErrFeatureFlagNotFound
+	}
+	return s.featureFlagRepo.GetFeatureFlagByID(ctx, featureFlagID)
+}
+func (s *FeatureFlagService) GetFeatureFlags(ctx context.Context) ([]models.FeatureFlag, error) {
+	return s.featureFlagRepo.GetAllFeatureFlags(ctx)
+}
+
+func (s *FeatureFlagService) UpdateDefaultValue(ctx context.Context, id uuid.UUID, v string) error {
+	if v == "" {
+		return errs.ErrDefaultValueIsEmpty
+	}
+	flag, err := s.featureFlagRepo.GetFeatureFlagByID(ctx, id)
+	if err != nil {
+		if errors.Is(err, errs.ErrRecordNotFound) {
+			return errs.ErrFeatureFlagNotFound
+		}
+		return err
+	}
+	if err := validation.ValidateValue(flag.ValueType, v); err != nil {
+		return err
+	}
+	return s.featureFlagRepo.UpdateFeatureFlagsDefaultValue(ctx, id, v)
+}
+
+
+================================================================================
+ФАЙЛ: C:\Users\Karimi\GolandProjects\AB_system\internal\domain\service\roles.go
+================================================================================
+package service
+
+import (
+	"AB_system/internal/domain/models"
+	"AB_system/internal/domain/repository"
+	"AB_system/pkg/errs"
+	"context"
+	"github.com/google/uuid"
+)
+
+type RoleService struct {
+	roleRepo repository.RoleRepository
+}
+
+func NewRoleService(roleRepo repository.RoleRepository) *RoleService {
+	return &RoleService{roleRepo: roleRepo}
+}
+func (s *RoleService) GetAllRoles(ctx context.Context) ([]models.Role, error) {
+	return s.roleRepo.GetAllRoles(ctx)
+}
+func (s *RoleService) GetRoleByID(ctx context.Context, id uuid.UUID) (models.Role, error) {
+	if id == uuid.Nil {
+		return models.Role{}, errs.ErrIdIsEmpty
+	}
+	existingRole, err := s.roleRepo.ExistsRole(ctx, id)
+	if err != nil {
+		return models.Role{}, err
+	}
+	if !existingRole {
+		return models.Role{}, errs.ErrRoleNotFound
+	}
+	return s.roleRepo.GetRoleByID(ctx, id)
+}
+func (s *RoleService) DeleteRole(ctx context.Context, id uuid.UUID) error {
+	if id == uuid.Nil {
+		return errs.ErrIdIsEmpty
+	}
+	existingRole, err := s.roleRepo.ExistsRole(ctx, id)
+	if err != nil {
+		return err
+	}
+	if !existingRole {
+		return errs.ErrRoleNotFound
+	}
+	return s.roleRepo.DeleteRole(ctx, id)
+}
+
+
+================================================================================
+ФАЙЛ: C:\Users\Karimi\GolandProjects\AB_system\internal\domain\service\users.go
+================================================================================
+package service
+
+import (
+	"AB_system/internal/domain/models"
+	"AB_system/internal/domain/repository"
+	service "AB_system/internal/domain/service/input"
+	"AB_system/pkg/errs"
+	"context"
+	"github.com/google/uuid"
+)
+
+type UserService struct {
+	userRepo repository.UserRepository
+	roleRepo repository.RoleRepository
+}
+
+func NewUserService(userRepo repository.UserRepository, roleRepo repository.RoleRepository) *UserService {
+	return &UserService{userRepo: userRepo,
+		roleRepo: roleRepo,
+	}
+}
+func (s *UserService) CreateUser(ctx context.Context, user models.User) (*models.User, error) {
+	if user.Email == "" {
+		return nil, errs.ErrEmailIsEmpty
+	}
+	if user.Name == "" {
+		return nil, errs.ErrNameIsEmpty
+	}
+	if user.RoleID == uuid.Nil {
+		return nil, errs.ErrIdIsEmpty
+	}
+	exists, err := s.userRepo.ExistsUserByEmail(ctx, user.Email)
+	if err != nil {
+		return nil, err
+	}
+	if exists {
+		return nil, errs.ErrEmailUniquenessFailed
+	}
+	return s.userRepo.CreateUser(ctx, &user)
+}
+func (s *UserService) UpdateUser(ctx context.Context, ID uuid.UUID, in service.UpdateUserInput) (*models.User, error) {
+	exists, err := s.userRepo.ExistsUser(ctx, ID)
+	if err != nil {
+		return nil, err
+	}
+	if !exists {
+		return nil, errs.ErrUserNotFound
+	}
+	u, err := s.userRepo.GetUserByID(ctx, ID)
+	if err != nil {
+		return nil, err
+	}
+	if in.Name != nil {
+		if *in.Name == "" {
+			return nil, errs.ErrNameIsEmpty
+		}
+		u.Name = *in.Name
+	}
+	if in.RoleID != nil {
+		if *in.RoleID == uuid.Nil {
+			return nil, errs.ErrIdIsEmpty
+		}
+		exists, err := s.roleRepo.ExistsRole(ctx, *in.RoleID)
+		if err != nil {
+			return nil, err
+		}
+		if !exists {
+			return nil, errs.ErrRoleNotFound
+		}
+		u.RoleID = *in.RoleID
+
+	}
+	if in.IsActive != nil {
+		u.IsActive = *in.IsActive
+	}
+	if err := s.userRepo.UpdateUser(ctx, &u); err != nil {
+		return nil, err
+	}
+	return &u, nil
+}
+func (s *UserService) DeleteUser(ctx context.Context, userID uuid.UUID) error {
+	if userID == uuid.Nil {
+		return errs.ErrIdIsEmpty
+	}
+	exists, err := s.userRepo.ExistsUser(ctx, userID)
+	if err != nil {
+		return err
+	}
+	if !exists {
+		return errs.ErrUserNotFound
+	}
+	return s.userRepo.DeleteUser(ctx, userID)
+}
+func (s *UserService) GetUserByID(ctx context.Context, userID uuid.UUID) (models.User, error) {
+	if userID == uuid.Nil {
+		return models.User{}, errs.ErrIdIsEmpty
+	}
+	return s.userRepo.GetUserByID(ctx, userID)
+}
+func (s *UserService) GetAllUsers(ctx context.Context) ([]models.User, error) {
+	return s.userRepo.GetAllUser(ctx)
+}
+
+
+================================================================================
+ФАЙЛ: C:\Users\Karimi\GolandProjects\AB_system\internal\domain\service\input\experiment_input.go
+================================================================================
+package input
+
+import "github.com/google/uuid"
+
+// internal/domain/service/experiment_input.go
+type VariantInput struct {
+	Name      string
+	Value     string
+	WeightBP  int
+	IsControl bool
+}
+
+type CreateExperimentInput struct {
+	FeatureFlagID uuid.UUID
+	Name          string
+	AudienceBP    int
+	Variants      []VariantInput
+}
+type UpdateExperimentInput struct {
+	Name       string
+	AudienceBP int
+	Variants   []VariantInput
+}
+
+
+================================================================================
+ФАЙЛ: C:\Users\Karimi\GolandProjects\AB_system\internal\domain\service\input\user_input.go
+================================================================================
+package input
+
+import "github.com/google/uuid"
+
+type UpdateUserInput struct {
+	Name     *string
+	RoleID   *uuid.UUID
+	IsActive *bool
+}
+
+
+================================================================================
+ФАЙЛ: C:\Users\Karimi\GolandProjects\AB_system\internal\domain\service\validation\experiment.go
+================================================================================
+package validation
+
+import (
+	"AB_system/internal/domain/models"
+	"AB_system/pkg/errs"
+)
+
+func ValidateConfig(name string, audienceBP int, variants []models.ExperimentVariant) error {
+	if name == "" {
+		return errs.ErrExperimentNameIsEmpty
+	}
+	if audienceBP <= 0 || audienceBP > models.FullAudienceBP {
+		return errs.ErrInvalidField
+	}
+	if len(variants) == 0 {
+		return errs.ErrExperimentVariantsEmpty
+	}
+
+	sum, controls := 0, 0
+	seen := map[string]bool{}
+	for _, v := range variants {
+		if v.Name == "" || v.Value == "" || v.Weight <= 0 || seen[v.Name] {
+			return errs.ErrInvalidField
+		}
+		seen[v.Name] = true
+		sum += v.Weight
+		if v.IsControl {
+			controls++
+		}
+	}
+	if sum != audienceBP {
+		return errs.ErrWeightsSumMismatch
+	}
+	if controls != 1 {
+		return errs.ErrControlVariantCount
+	}
+	return nil
+}
+
+
+================================================================================
+ФАЙЛ: C:\Users\Karimi\GolandProjects\AB_system\internal\domain\service\validation\variantValue.go
+================================================================================
+package validation
+
+import (
+	"AB_system/internal/domain/models"
+	"AB_system/pkg/errs"
+	"strconv"
+)
+
+func ValidateVariantValues(valueType string, variants []models.ExperimentVariant) error {
+	for _, v := range variants {
+		if err := ValidateValue(valueType, v.Value); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func ValidateValue(valueType, value string) error {
+	switch valueType {
+	case "bool":
+		if value != "true" && value != "false" {
+			return errs.ErrInvalidField
+		}
+	case "number":
+		if _, err := strconv.ParseFloat(value, 64); err != nil {
+			return errs.ErrInvalidField
+		}
+	case "string":
+		// любая непустая строка
+	default:
+		return errs.ErrInvalidField
+	}
+	return nil
+}
+
+
+================================================================================
+ФАЙЛ: C:\Users\Karimi\GolandProjects\AB_system\internal\http\dto\experiment.go
+================================================================================
+package dto
+
+import (
+	"AB_system/internal/domain/models"
+	"AB_system/internal/domain/service/input"
+	"github.com/google/uuid"
+	"time"
+)
+
+type VariantRequest struct {
+	Name      string `json:"name" binding:"required,max=255"`
+	Value     string `json:"value" binding:"required"`
+	WeightBP  int    `json:"weight_bp" binding:"required,gt=0,lte=10000"`
+	IsControl bool   `json:"is_control"`
+}
+
+type CreateExperimentRequest struct {
+	FeatureFlagID uuid.UUID        `json:"feature_flag_id" binding:"required"`
+	Name          string           `json:"name" binding:"required,max=255"`
+	AudienceBP    int              `json:"audience_bp" binding:"required,gt=0,lte=10000"`
+	Variants      []VariantRequest `json:"variants" binding:"required,min=1,max=20,dive"`
+}
+
+func (r CreateExperimentRequest) ToInput() input.CreateExperimentInput {
+	in := input.CreateExperimentInput{
+		FeatureFlagID: r.FeatureFlagID,
+		Name:          r.Name,
+		AudienceBP:    r.AudienceBP,
+	}
+	for _, v := range r.Variants {
+		in.Variants = append(in.Variants, input.VariantInput{
+			Name: v.Name, Value: v.Value, WeightBP: v.WeightBP, IsControl: v.IsControl,
+		})
+	}
+	return in
+}
+
+type VariantResponse struct {
+	ID        uuid.UUID `json:"id"`
+	Name      string    `json:"name"`
+	Value     string    `json:"value"`
+	WeightBP  int       `json:"weight_bp"`
+	IsControl bool      `json:"is_control"`
+}
+
+type ExperimentResponse struct {
+	ID            uuid.UUID         `json:"id"`
+	FeatureFlagID uuid.UUID         `json:"feature_flag_id"`
+	Name          string            `json:"name"`
+	Status        string            `json:"status"`
+	AudienceBP    int               `json:"audience_bp"`
+	Version       int               `json:"version"`
+	OwnerID       uuid.UUID         `json:"owner_id"`
+	Variants      []VariantResponse `json:"variants"`
+	CreatedAt     time.Time         `json:"created_at"`
+}
+
+func NewExperimentResponse(e *models.Experiment) ExperimentResponse {
+	res := ExperimentResponse{
+		ID: e.ID, FeatureFlagID: e.FeatureFlagID, Name: e.Name,
+		Status: string(e.Status), AudienceBP: e.AudienceBP, Version: e.Version,
+		OwnerID: e.OwnerID, CreatedAt: e.CreatedAt,
+	}
+	for _, v := range e.Variants {
+		res.Variants = append(res.Variants, VariantResponse{
+			ID: v.ID, Name: v.Name, Value: v.Value, WeightBP: v.Weight, IsControl: v.IsControl,
+		})
+	}
+	return res
+}
+func (r UpdateExperimentRequest) ToInput() input.UpdateExperimentInput {
+	in := input.UpdateExperimentInput{Name: r.Name, AudienceBP: r.AudienceBP}
+	for _, v := range r.Variants {
+		in.Variants = append(in.Variants, input.VariantInput{
+			Name: v.Name, Value: v.Value, WeightBP: v.WeightBP, IsControl: v.IsControl,
+		})
+	}
+	return in
+}
+func ToVariantModels(in []input.VariantInput) []models.ExperimentVariant {
+	res := make([]models.ExperimentVariant, 0, len(in))
+	for _, v := range in {
+		res = append(res, models.ExperimentVariant{
+			Name: v.Name, Value: v.Value, Weight: v.WeightBP, IsControl: v.IsControl,
+		})
+	}
+	return res
+}
+
+type UpdateExperimentRequest struct {
+	Name       string           `json:"name" binding:"required,max=255"`
+	AudienceBP int              `json:"audience_bp" binding:"required,gt=0,lte=10000"`
+	Variants   []VariantRequest `json:"variants" binding:"required,min=1,max=20,dive"`
+}
+
+
+================================================================================
+ФАЙЛ: C:\Users\Karimi\GolandProjects\AB_system\internal\http\dto\feature_flag.go
+================================================================================
+package dto
+
+import (
+	"AB_system/internal/domain/models"
+	"time"
+
+	"github.com/google/uuid"
+)
+
+type CreateFeatureFlagRequest struct {
+	Key          string `json:"key" binding:"required,max=255"`
+	ValueType    string `json:"value_type" binding:"required,oneof=string number bool"`
+	DefaultValue string `json:"default_value" binding:"required"`
+}
+
+type UpdateDefaultValueRequest struct {
+	Value string `json:"value" binding:"required"`
+}
+
+type FeatureFlagResponse struct {
+	ID           uuid.UUID `json:"id"`
+	Key          string    `json:"key"`
+	ValueType    string    `json:"value_type"`
+	DefaultValue string    `json:"default_value"`
+	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
+}
+
+func NewFeatureFlagResponse(f *models.FeatureFlag) FeatureFlagResponse {
+	return FeatureFlagResponse{
+		ID:           f.ID,
+		Key:          f.Key,
+		ValueType:    f.ValueType,
+		DefaultValue: f.DefaultValue,
+		CreatedAt:    f.CreatedAt,
+		UpdatedAt:    f.UpdatedAt,
+	}
+}
+
+
+================================================================================
+ФАЙЛ: C:\Users\Karimi\GolandProjects\AB_system\internal\http\dto\users.go
+================================================================================
+package dto
+
+import (
+	"AB_system/internal/domain/models"
+	"github.com/google/uuid"
+	"time"
+)
+
+type UserRequest struct {
+	Email    string    `json:"email" binding:"required"`
+	Name     string    `json:"name" binding:"required"`
+	RoleID   uuid.UUID `json:"role_id" binding:"required"`
+	IsActive bool      `json:"is_active" default:"true"`
+}
+type UserResponse struct {
+	ID        uuid.UUID `json:"id" gorm:"type:uuid;index"`
+	Email     string    `json:"email" gorm:"unique;index"`
+	Name      string    `json:"name" gorm:"unique;index"`
+	RoleID    uuid.UUID `json:"role_id" gorm:"index"`
+	IsActive  bool      `json:"is_active" gorm:"default:true"`
+	CreatedAt time.Time `json:"created_at" gorm:"autoCreateTime"`
+	UpdatedAt time.Time `json:"updated_at" gorm:"autoUpdateTime"`
+}
+
+func NewUserResponse(u *models.User) UserResponse {
+	return UserResponse{
+		ID:        u.ID,
+		Email:     u.Email,
+		Name:      u.Name,
+		RoleID:    u.RoleID,
+		IsActive:  u.IsActive,
+		CreatedAt: u.CreatedAt,
+		UpdatedAt: u.UpdatedAt,
+	}
+}
+
+type UpdateUserRequest struct {
+	Name     *string    `json:"name" binding:"omitempty,min=1,max=255"`
+	RoleID   *uuid.UUID `json:"role_id"`
+	IsActive *bool      `json:"is_active"`
+}
+
+
+================================================================================
+ФАЙЛ: C:\Users\Karimi\GolandProjects\AB_system\internal\http\handlers\common.go
+================================================================================
+package handler
+
+import (
+	"AB_system/internal/http/observability"
+	"AB_system/pkg/errs"
+	"errors"
+	"log/slog"
+	"net/http"
+
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
+)
+
+func writeError(c *gin.Context, err error) {
+	ctx := c.Request.Context()
+	status, msg := mapError(err)
+	if status >= http.StatusInternalServerError {
+		slog.ErrorContext(ctx, "internal error",
+			"err", err,
+			"trace_id", observability.GetTraceID(ctx),
+		)
+	}
+	c.JSON(status, gin.H{
+		"error":    msg,
+		"trace_id": observability.GetTraceID(ctx),
+	})
+}
+
+func writeBadRequest(c *gin.Context, err error) {
+	c.JSON(http.StatusBadRequest, gin.H{
+		"error":    err.Error(),
+		"trace_id": observability.GetTraceID(c.Request.Context()),
+	})
+}
+
+func mapError(err error) (int, string) {
+	switch {
+	case errors.Is(err, errs.ErrFeatureFlagNotFound),
+		errors.Is(err, errs.ErrUserNotFound),
+		errors.Is(err, errs.ErrRoleNotFound),
+		errors.Is(err, errs.ErrExperimentNotFound),
+		errors.Is(err, errs.ErrRecordNotFound):
+		return http.StatusNotFound, err.Error()
+
+	case errors.Is(err, errs.ErrDuplicateEntry),
+		errors.Is(err, errs.ErrEmailUniquenessFailed),
+		errors.Is(err, errs.ErrConflict),
+		errors.Is(err, errs.ErrExperimentNotEditable),
+		errors.Is(err, errs.ErrInvalidTransition):
+		return http.StatusConflict, err.Error()
+
+	case errors.Is(err, errs.ErrPermissionDenied):
+		return http.StatusForbidden, err.Error()
+
+	case errors.Is(err, errs.ErrKeyIsEmpty),
+		errors.Is(err, errs.ErrValueTypeIsEmpty),
+		errors.Is(err, errs.ErrDefaultValueIsEmpty),
+		errors.Is(err, errs.ErrInvalidField),
+		errors.Is(err, errs.ErrIdIsEmpty),
+		errors.Is(err, errs.ErrIdIsInvalid),
+		errors.Is(err, errs.ErrEmailIsEmpty),
+		errors.Is(err, errs.ErrNameIsEmpty),
+		errors.Is(err, errs.ErrExperimentNameIsEmpty),
+		errors.Is(err, errs.ErrExperimentVariantsEmpty),
+		errors.Is(err, errs.ErrWeightsSumMismatch),
+		errors.Is(err, errs.ErrControlVariantCount):
+		return http.StatusBadRequest, err.Error()
+
+	default:
+		return http.StatusInternalServerError, "внутренняя ошибка сервера"
+	}
+}
+
+func parseUUID(c *gin.Context, param string) (uuid.UUID, bool) {
+	id, err := uuid.Parse(c.Param(param))
+	if err != nil {
+		writeError(c, errs.ErrIdIsInvalid)
+		return uuid.Nil, false
+	}
+	return id, true
+}
+func currentUserID(c *gin.Context) (uuid.UUID, bool) {
+	id, err := uuid.Parse(c.GetHeader("X-User-Id"))
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error":    "нужен заголовок X-User-Id с UUID пользователя",
+			"trace_id": observability.GetTraceID(c.Request.Context()),
+		})
+		return uuid.Nil, false
+	}
+	return id, true
+}
+
+
+================================================================================
+ФАЙЛ: C:\Users\Karimi\GolandProjects\AB_system\internal\http\handlers\experiment.go
+================================================================================
+package handler
+
+import (
+	"AB_system/internal/domain/service"
+	"AB_system/internal/http/dto"
+	"github.com/gin-gonic/gin"
+	"net/http"
+)
+
+type ExperimentHandler struct {
+	svc *service.ExperimentService
+}
+
+func NewExperimentHandler(svc *service.ExperimentService) *ExperimentHandler {
+	return &ExperimentHandler{svc: svc}
+}
+func (h *ExperimentHandler) Register(r *gin.RouterGroup) {
+	g := r.Group("/experiments")
+	g.POST("", h.Create)
+	g.GET("", h.List)
+	g.GET("/:id", h.Get)
+	g.PUT("/:id", h.Update)
+}
+func (h *ExperimentHandler) Create(c *gin.Context) {
+	var req dto.CreateExperimentRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		writeBadRequest(c, err)
+		return
+	}
+	ownerID, ok := currentUserID(c)
+	if !ok {
+		return
+	}
+	e, err := h.svc.CreateExperiment(c.Request.Context(), ownerID, req.ToInput())
+	if err != nil {
+		writeError(c, err)
+		return
+	}
+	c.JSON(http.StatusCreated, dto.NewExperimentResponse(e))
+}
+func (h *ExperimentHandler) Get(c *gin.Context) {
+	ID, ok := parseUUID(c, "id")
+	if !ok {
+		return
+	}
+
+	experiment, err := h.svc.GetExperimentByID(c.Request.Context(), ID)
+	if err != nil {
+		writeError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, dto.NewExperimentResponse(&experiment))
+
+}
+func (h *ExperimentHandler) List(c *gin.Context) {
+	experiments, err := h.svc.GetExperiments(c.Request.Context())
+	if err != nil {
+		writeError(c, err)
+		return
+	}
+	res := make([]dto.ExperimentResponse, 0, len(experiments))
+	for i := range experiments {
+		res = append(res, dto.NewExperimentResponse(&experiments[i]))
+	}
+	c.JSON(http.StatusOK, res)
+}
+func (h *ExperimentHandler) Update(c *gin.Context) {
+	id, ok := parseUUID(c, "id")
+	if !ok {
+		return
+	}
+	actorID, ok := currentUserID(c)
+	if !ok {
+		return
+	}
+	var req dto.UpdateExperimentRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		writeBadRequest(c, err)
+		return
+	}
+
+	ctx := c.Request.Context()
+	if err := h.svc.UpdateExperiment(ctx, id, actorID, req.ToInput()); err != nil {
+		writeError(c, err)
+		return
+	}
+	e, err := h.svc.GetExperimentByID(ctx, id)
+	if err != nil {
+		writeError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, dto.NewExperimentResponse(&e))
+}
+
+
+================================================================================
+ФАЙЛ: C:\Users\Karimi\GolandProjects\AB_system\internal\http\handlers\feature_flags.go
+================================================================================
+package handler
+
+import (
+	"AB_system/internal/domain/models"
+	"AB_system/internal/domain/service"
+	"AB_system/internal/http/dto"
+	"net/http"
+
+	"github.com/gin-gonic/gin"
+)
+
+type FeatureFlagHandler struct {
+	svc *service.FeatureFlagService
+}
+
+func NewFeatureFlagHandler(svc *service.FeatureFlagService) *FeatureFlagHandler {
+	return &FeatureFlagHandler{svc: svc}
+}
+
+func (h *FeatureFlagHandler) Register(r *gin.RouterGroup) {
+	g := r.Group("/feature-flags")
+	g.POST("", h.Create)
+	g.GET("", h.List)
+	g.GET("/:id", h.Get)
+	g.PATCH("/:id/default", h.UpdateDefault)
+}
+
+func (h *FeatureFlagHandler) Create(c *gin.Context) {
+	var req dto.CreateFeatureFlagRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		writeBadRequest(c, err)
+		return
+	}
+	f, err := h.svc.CreateFeatureFlag(c.Request.Context(), &models.FeatureFlag{
+		Key:          req.Key,
+		ValueType:    req.ValueType,
+		DefaultValue: req.DefaultValue,
+	})
+	if err != nil {
+		writeError(c, err)
+		return
+	}
+	c.JSON(http.StatusCreated, dto.NewFeatureFlagResponse(f))
+}
+
+func (h *FeatureFlagHandler) List(c *gin.Context) {
+	flags, err := h.svc.GetFeatureFlags(c.Request.Context())
+	if err != nil {
+		writeError(c, err)
+		return
+	}
+	res := make([]dto.FeatureFlagResponse, 0, len(flags))
+	for i := range flags {
+		res = append(res, dto.NewFeatureFlagResponse(&flags[i]))
+	}
+	c.JSON(http.StatusOK, res)
+}
+
+func (h *FeatureFlagHandler) Get(c *gin.Context) {
+	id, ok := parseUUID(c, "id")
+	if !ok {
+		return
+	}
+	f, err := h.svc.GetFeatureFlag(c.Request.Context(), id)
+	if err != nil {
+		writeError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, dto.NewFeatureFlagResponse(&f))
+}
+
+func (h *FeatureFlagHandler) UpdateDefault(c *gin.Context) {
+	id, ok := parseUUID(c, "id")
+	if !ok {
+		return
+	}
+	var req dto.UpdateDefaultValueRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		writeBadRequest(c, err)
+		return
+	}
+	ctx := c.Request.Context()
+	if err := h.svc.UpdateDefaultValue(ctx, id, req.Value); err != nil {
+		writeError(c, err)
+		return
+	}
+	f, err := h.svc.GetFeatureFlag(ctx, id)
+	if err != nil {
+		writeError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, dto.NewFeatureFlagResponse(&f))
+}
+
+
+================================================================================
+ФАЙЛ: C:\Users\Karimi\GolandProjects\AB_system\internal\http\handlers\health.go
+================================================================================
+package handler
+
+import (
+	"context"
+	"net/http"
+	"time"
+
+	"github.com/gin-gonic/gin"
+)
+
+type Pinger interface {
+	PingContext(ctx context.Context) error
+}
+
+type HealthHandler struct {
+	db Pinger
+}
+
+func NewHealthHandler(db Pinger) *HealthHandler {
+	return &HealthHandler{db: db}
+}
+
+// Health: процесс жив.
+func (h *HealthHandler) Health(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{"status": "ok"})
+}
+
+// Ready: можем обслуживать запросы (база отвечает).
+func (h *HealthHandler) Ready(c *gin.Context) {
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 2*time.Second)
+	defer cancel()
+	if err := h.db.PingContext(ctx); err != nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"status": "not ready"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"status": "ready"})
+}
+
+
+================================================================================
+ФАЙЛ: C:\Users\Karimi\GolandProjects\AB_system\internal\http\handlers\users.go
+================================================================================
+package handler
+
+import (
+	"AB_system/internal/domain/models"
+	"AB_system/internal/domain/service"
+	service2 "AB_system/internal/domain/service/input"
+	"AB_system/internal/http/dto"
+	"github.com/gin-gonic/gin"
+	"net/http"
+)
+
+type UsersHandler struct {
+	svc *service.UserService
+}
+
+func NewUsersHandler(svc *service.UserService) *UsersHandler {
+	return &UsersHandler{svc: svc}
+}
+func (h *UsersHandler) Register(r *gin.RouterGroup) {
+	//В Register стоят PUT и DELETE. Мы решили PATCH и без удаления (деактивация через is_active).
+	g := r.Group("/users")
+	g.POST("", h.Create)
+	g.GET("", h.List)
+	g.GET("/:id", h.Get)
+	g.PUT("/:id", h.Update)
+	g.DELETE("/:id", h.Delete)
+}
+func (h *UsersHandler) Create(c *gin.Context) {
+	var req dto.UserRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		writeBadRequest(c, err)
+		return
+	}
+	user, err := h.svc.CreateUser(c, models.User{
+		Email:    req.Email,
+		Name:     req.Name,
+		RoleID:   req.RoleID,
+		IsActive: req.IsActive,
+	})
+	if err != nil {
+		writeError(c, err)
+		return
+	}
+	c.JSON(http.StatusCreated, dto.NewUserResponse(user))
+}
+func (h *UsersHandler) List(c *gin.Context) {
+	users, err := h.svc.GetAllUsers(c.Request.Context())
+	if err != nil {
+		writeError(c, err)
+		return
+	}
+	responses := make([]dto.UserResponse, 0, len(users))
+	for _, u := range users {
+		responses = append(responses, dto.NewUserResponse(&u))
+	}
+	c.JSON(http.StatusOK, responses)
+}
+func (h *UsersHandler) Get(c *gin.Context) {
+
+	ID, ok := parseUUID(c, "id")
+	if !ok {
+		return
+	}
+	user, err := h.svc.GetUserByID(c.Request.Context(), ID)
+	if err != nil {
+		writeError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, dto.NewUserResponse(&user))
+}
+func (h *UsersHandler) Delete(c *gin.Context) {
+	id, ok := parseUUID(c, "id")
+	if !ok {
+		return
+	}
+	err := h.svc.DeleteUser(c.Request.Context(), id)
+	if err != nil {
+		writeError(c, err)
+		return
+	}
+	c.JSON(http.StatusNoContent, gin.H{
+		"status": "deleted",
+	})
+}
+func (h *UsersHandler) Update(c *gin.Context) {
+	ID, ok := parseUUID(c, "id")
+	if !ok {
+		return
+	}
+	var req dto.UpdateUserRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		writeBadRequest(c, err)
+		return
+	}
+	user, err := h.svc.UpdateUser(c.Request.Context(), ID, service2.UpdateUserInput{
+		Name:     req.Name,
+		RoleID:   req.RoleID,
+		IsActive: req.IsActive,
+	})
+	if err != nil {
+		writeError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, dto.NewUserResponse(user))
+}
+
+
+================================================================================
+ФАЙЛ: C:\Users\Karimi\GolandProjects\AB_system\internal\http\middlewares\middleware.go
+================================================================================
+package middlewares
+
+import (
+	"AB_system/internal/http/observability"
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
+	"log/slog"
+	"time"
+)
+
+// TraceID берёт X-Trace-Id из запроса или создаёт новый и кладёт его в контекст.
+func TraceID() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		id := c.GetHeader(observability.TraceHeader)
+		if id == "" {
+			id = uuid.NewString()
+		}
+		c.Header(observability.TraceHeader, id)
+		c.Request = c.Request.WithContext(
+			observability.WithTraceID(c.Request.Context(), id),
+		)
+		c.Next()
+	}
+}
+
+// RequestLogger пишет одну JSON-строку на каждый запрос.
+func RequestLogger() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		start := time.Now()
+		c.Next()
+		ctx := c.Request.Context()
+		slog.InfoContext(ctx, "http request",
+			"method", c.Request.Method,
+			"path", c.FullPath(),
+			"status", c.Writer.Status(),
+			"duration_ms", time.Since(start).Milliseconds(),
+			"trace_id", observability.GetTraceID(ctx),
+		)
+	}
+}
+
+
+================================================================================
+ФАЙЛ: C:\Users\Karimi\GolandProjects\AB_system\internal\http\observability\trace_id.go
+================================================================================
+package observability
+
+import "context"
+
+type ctxKey struct{}
+
+const TraceHeader = "X-Trace-Id"
+
+func WithTraceID(ctx context.Context, id string) context.Context {
+	return context.WithValue(ctx, ctxKey{}, id)
+}
+
+func GetTraceID(ctx context.Context) string {
+	id, _ := ctx.Value(ctxKey{}).(string)
+	return id
+}
+
+
+================================================================================
+ФАЙЛ: C:\Users\Karimi\GolandProjects\AB_system\internal\http\router\router.go
+================================================================================
+package router
+
+import (
+	handler "AB_system/internal/http/handlers"
+	"AB_system/internal/http/middlewares"
+
+	"github.com/gin-gonic/gin"
+)
+
+type Registrar interface {
+	Register(r *gin.RouterGroup)
+}
+
+type Deps struct {
+	Health   *handler.HealthHandler
+	Handlers []Registrar
+}
+
+func New(d Deps) *gin.Engine {
+	r := gin.New()
+	r.Use(gin.Recovery(), middlewares.TraceID(), middlewares.RequestLogger())
+
+	r.GET("/health", d.Health.Health)
+	r.GET("/ready", d.Health.Ready)
+
+	api := r.Group("/api/v1")
+
+	for _, h := range d.Handlers {
+		h.Register(api)
+	}
+
+	return r
+}
+
+
+================================================================================
+ФАЙЛ: C:\Users\Karimi\GolandProjects\AB_system\internal\repository\check_error.go
+================================================================================
+package repository
+
+import (
+	"AB_system/internal/http/observability"
+	"context"
+	"errors"
+	"log/slog"
+
+	"gorm.io/gorm"
+)
+
+func CheckError(ctx context.Context, op string, err error) error {
+	if err == nil {
+		return nil
+	}
+
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		slog.WarnContext(ctx, "record not found",
+			"op", op,
+			"trace_id", observability.GetTraceID(ctx),
+		)
+		return TranslateGormError(err)
+	}
+
+	slog.ErrorContext(ctx, "repository error",
+		"op", op,
+		"trace_id", observability.GetTraceID(ctx),
+		"err", err,
+	)
+	return TranslateGormError(err)
+}
+
+
+================================================================================
+ФАЙЛ: C:\Users\Karimi\GolandProjects\AB_system\internal\repository\translate_gorm_error.go
+================================================================================
+package repository
+
+import (
+	"AB_system/pkg/errs"
+	"errors"
+	"gorm.io/gorm"
+	"strings"
+)
+
+func TranslateGormError(err error) error {
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return errs.ErrRecordNotFound
+	}
+	if errors.Is(err, gorm.ErrDuplicatedKey) {
+		return errs.ErrDuplicateEntry
+	}
+	if errors.Is(err, gorm.ErrInvalidField) {
+		return errs.ErrInvalidField
+	}
+
+	if errors.Is(err, gorm.ErrUnsupportedDriver) {
+		return errs.ErrUnsupportedDriver
+	}
+	if errors.Is(err, gorm.ErrNotImplemented) {
+		return errs.ErrNotImplemented
+	}
+	if isForeignKeyViolation(err) {
+		return errs.ErrInvalidField
+	}
+	if errors.Is(err, gorm.ErrForeignKeyViolated) {
+		return errs.ErrInvalidField
+	}
+	return err
+}
+
+func isForeignKeyViolation(err error) bool {
+	return strings.Contains(err.Error(), "violates foreign key constraint")
+}
+
+
+================================================================================
+ФАЙЛ: C:\Users\Karimi\GolandProjects\AB_system\internal\repository\postgres\experimentApproval.go
+================================================================================
+package postgres
+
+import (
+	"AB_system/internal/domain/models"
+	"AB_system/internal/repository"
+	"context"
+	"time"
+
+	"github.com/google/uuid"
+	"gorm.io/gorm"
+)
+
+type ExperimentApprovalRepository struct {
+	db *gorm.DB
+}
+
+func NewExperimentApprovalRepository(db *gorm.DB) *ExperimentApprovalRepository {
+	return &ExperimentApprovalRepository{
+		db: db,
+	}
+}
+
+func (r *ExperimentApprovalRepository) GetApprovalsByExperimentID(
+	ctx context.Context,
+	experimentID uuid.UUID,
+) ([]models.ExperimentApproval, error) {
+	const op = "GetApprovalsByExperimentID"
+	var approvals []models.ExperimentApproval
+
+	err := r.db.WithContext(ctx).
+		Where("experiment_id = ?", experimentID).
+		Order("created_at ASC").
+		Find(&approvals).Error
+
+	if err := repository.CheckError(ctx, op, err); err != nil {
+		return nil, err
+	}
+
+	return approvals, nil
+}
+
+func (r *ExperimentApprovalRepository) ApproveExperiment(
+	ctx context.Context,
+	experimentID uuid.UUID,
+	approverID uuid.UUID,
+) error {
+	const op = "ApproveExperiment"
+	now := time.Now()
+
+	approval := models.ExperimentApproval{
+		ExperimentID: experimentID,
+		ApproverID:   approverID,
+		Status:       models.ApprovalApproved,
+		DecidedAt:    &now,
+	}
+
+	result := r.db.WithContext(ctx).
+		Create(&approval).Error
+	if err := repository.CheckError(ctx, op, result); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *ExperimentApprovalRepository) RequestExperimentChanges(
+	ctx context.Context,
+	experimentID uuid.UUID,
+	approverID uuid.UUID,
+	comment string,
+) error {
+	const op = "RequestExperimentChanges"
+	now := time.Now()
+
+	approval := models.ExperimentApproval{
+		ExperimentID: experimentID,
+		ApproverID:   approverID,
+		Status:       models.ApprovalChangesNeeded,
+		Comment:      comment,
+		DecidedAt:    &now,
+	}
+
+	result := r.db.WithContext(ctx).
+		Create(&approval).Error
+	if err := repository.CheckError(ctx, op, result); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *ExperimentApprovalRepository) RejectExperiment(
+	ctx context.Context,
+	experimentID uuid.UUID,
+	approverID uuid.UUID,
+	comment string,
+) error {
+	const op = "RejectExperiment"
+	now := time.Now()
+
+	approval := models.ExperimentApproval{
+		ExperimentID: experimentID,
+		ApproverID:   approverID,
+		Status:       models.ApprovalRejected,
+		Comment:      comment,
+		DecidedAt:    &now,
+	}
+
+	result := r.db.WithContext(ctx).
+		Create(&approval).Error
+	if err := repository.CheckError(ctx, op, result); err != nil {
+		return err
+	}
+	return nil
+}
+
+
+================================================================================
+ФАЙЛ: C:\Users\Karimi\GolandProjects\AB_system\internal\repository\postgres\experiments.go
+================================================================================
+package postgres
+
+import (
+	"AB_system/internal/domain/models"
+	"AB_system/internal/repository"
+	"AB_system/pkg/errs"
+	"context"
+	"errors"
+	"github.com/google/uuid"
+	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
+)
+
+type ExperimentRepository struct {
+	db *gorm.DB
+}
+
+func NewExperimentRepository(db *gorm.DB) *ExperimentRepository {
+	return &ExperimentRepository{
+		db: db,
+	}
+}
+func (r *ExperimentRepository) GetAllExperiments(
+	ctx context.Context,
+) ([]models.Experiment, error) {
+	const op = "GetAllExperiments"
+	var result []models.Experiment
+	err := r.db.WithContext(ctx).
+		Preload("User").
+		Find(&result).Error
+	if err := repository.CheckError(ctx, op, err); err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+func (r *ExperimentRepository) GetExperimentByID(
+	ctx context.Context, experimentID uuid.UUID,
+) (models.Experiment, error) {
+	const op = "GetExperimentByID"
+	var result models.Experiment
+	err := r.db.WithContext(ctx).
+		Preload("User").
+		Preload("Variants").
+		First(&result, "id = ?", experimentID).Error
+	if err := repository.CheckError(ctx, op, err); err != nil {
+		return models.Experiment{}, err
+	}
+	return result, nil
+}
+
+func (r *ExperimentRepository) ExperimentExists(
+	ctx context.Context, experimentID uuid.UUID,
+) (bool, error) {
+	const op = "ExperimentExists"
+	var count int64
+	err := r.db.WithContext(ctx).
+		Model(&models.Experiment{}).
+		Where("id = ?", experimentID). // этой строки не хватало
+		Count(&count).Error
+	if err := repository.CheckError(ctx, op, err); err != nil {
+		return false, err
+	}
+	return count > 0, nil
+}
+
+// have to know how created UpdateExperiment, what is mean a snapshot.
+func (r *ExperimentRepository) UpdateExperiment(
+	ctx context.Context, e *models.Experiment, expectedVersion int, snapshot []byte,
+) error {
+	const op = "UpdateExperiment"
+
+	err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		res := tx.Model(&models.Experiment{}).
+			Omit(clause.Associations).
+			Where("id = ? AND version = ? AND status = ?",
+				e.ID, expectedVersion, models.ExperimentStatusDraft).
+			Select("Name", "AudienceBP", "Version").
+			Updates(e)
+		if res.Error != nil {
+			return res.Error
+		}
+		if res.RowsAffected == 0 {
+			return errs.ErrConflict
+		}
+
+		// 2. варианты: удалить старые, вставить новые
+		if err := tx.Where("experiment_id = ?", e.ID).
+			Delete(&models.ExperimentVariant{}).Error; err != nil {
+			return err
+		}
+		for i := range e.Variants {
+			e.Variants[i].ExperimentID = e.ID
+		}
+		if err := tx.Create(&e.Variants).Error; err != nil {
+			return err
+		}
+
+		// 3. снимок версии
+		return tx.Create(&models.ExperimentVersion{
+			ExperimentID: e.ID,
+			Version:      e.Version,
+			Snapshot:     snapshot,
+		}).Error
+	})
+
+	if errors.Is(err, errs.ErrConflict) {
+		return err // ожидаемая ситуация, в error-лог не пишем
+	}
+	return repository.CheckError(ctx, op, err)
+}
+func (r *ExperimentRepository) CreateExperiment(
+	ctx context.Context,
+	experiment *models.Experiment,
+) (*models.Experiment, error) {
+	const op = "CreateExperiment"
+	result := r.db.WithContext(ctx).Create(experiment).Error
+	if err := repository.CheckError(ctx, op, result); err != nil {
+		return nil, err
+	}
+	return experiment, nil
+}
+
+func (r *ExperimentRepository) TransitionExperiment(
+	ctx context.Context,
+	experimentID uuid.UUID,
+	status models.ExperimentStatus,
+) error {
+	const op = "TransitionExperiment"
+	result := r.db.WithContext(ctx).
+		Model(&models.Experiment{}).
+		Where("id = ?", experimentID).
+		Update("status", status)
+
+	if err := repository.CheckError(ctx, op, result.Error); err != nil {
+		return err
+	}
+	if result.RowsAffected == 0 {
+		return errs.ErrExperimentNotFound
+	}
+
+	return nil
+}
+func (r *ExperimentRepository) CompleteExperiment(
+	ctx context.Context,
+	experimentID uuid.UUID,
+) error {
+	const op = "CompleteExperiment"
+	result := r.db.WithContext(ctx).Model(&models.Experiment{}).
+		Where("id = ?", experimentID).
+		Update("status", models.ExperimentStatusCompleted)
+	if err := repository.CheckError(ctx, op, result.Error); err != nil {
+		return err
+	}
+	if result.RowsAffected == 0 {
+		return errs.ErrExperimentNotFound
+	}
+	return nil
+}
+
+
+================================================================================
+ФАЙЛ: C:\Users\Karimi\GolandProjects\AB_system\internal\repository\postgres\feature_flags.go
+================================================================================
+package postgres
+
+import (
+	"AB_system/internal/domain/models"
+	"AB_system/internal/repository"
+	"context"
+	"github.com/google/uuid"
+	"gorm.io/gorm"
+)
+
+type FeatureFlagRepository struct {
+	db *gorm.DB
+}
+
+func NewFeatureFlagRepository(db *gorm.DB) *FeatureFlagRepository {
+	return &FeatureFlagRepository{
+		db: db,
+	}
+}
+func (r *FeatureFlagRepository) GetAllFeatureFlags(
+	ctx context.Context,
+) ([]models.FeatureFlag, error) {
+	const op = "GetAllFeatureFlags"
+	var flags []models.FeatureFlag
+	err := r.db.WithContext(ctx).Find(&flags).Error
+	if err = repository.CheckError(ctx, op, err); err != nil {
+		return nil, err
+	}
+	return flags, err
+
+}
+func (r *FeatureFlagRepository) GetFeatureFlagByID(
+	ctx context.Context,
+	featureFlagID uuid.UUID,
+) (models.FeatureFlag, error) {
+	const op = "GetFeatureFlagByID"
+	var flag models.FeatureFlag
+	err := r.db.WithContext(ctx).Where("id=?", featureFlagID).First(&flag).Error
+	if err := repository.CheckError(ctx, op, err); err != nil {
+		return flag, err
+	}
+	return flag, nil
+}
+func (r *FeatureFlagRepository) CreateFeatureFlags(
+	ctx context.Context,
+	featureFlag *models.FeatureFlag,
+) (*models.FeatureFlag, error) {
+	const op = "CreateFeatureFlag"
+	result := r.db.WithContext(ctx).Create(featureFlag)
+	if err := repository.CheckError(ctx, op, result.Error); err != nil {
+		return nil, err
+	}
+	return featureFlag, nil
+}
+
+func (r *FeatureFlagRepository) ExistsFeatureFlag(
+	ctx context.Context,
+	featureFlagID uuid.UUID,
+) (bool, error) {
+	const op = "ExistsFeatureFlag"
+	var count int64
+	err := r.db.WithContext(ctx).
+		Model(&models.FeatureFlag{}).
+		Where("id=?", featureFlagID).
+		Count(&count).Error
+	if err := repository.CheckError(ctx, op, err); err != nil {
+		return false, err
+	}
+	return count > 0, nil
+}
+func (r *FeatureFlagRepository) DeleteFeatureFlag(
+	ctx context.Context,
+	featureFlagID uuid.UUID,
+) error {
+	const op = "DeleteFeatureFlag"
+	err := r.db.WithContext(ctx).Where("id=?", featureFlagID).Delete(&models.FeatureFlag{}).Error
+	if err := repository.CheckError(ctx, op, err); err != nil {
+		return err
+	}
+	return nil
+}
+func (r *FeatureFlagRepository) UpdateFeatureFlagsDefaultValue(
+	ctx context.Context,
+	featureFlagID uuid.UUID,
+	defaultValue string,
+) error {
+	const op = "UpdateFeatureFlagsDefaultValue"
+	var flag models.FeatureFlag
+	err := r.db.WithContext(ctx).Model(&flag).Where("id=?", featureFlagID).Update("default_value", defaultValue).Error
+	if err := repository.CheckError(ctx, op, err); err != nil {
+		return err
+	}
+	return nil
+
+}
+
+
+================================================================================
+ФАЙЛ: C:\Users\Karimi\GolandProjects\AB_system\internal\repository\postgres\roles.go
+================================================================================
+package postgres
+
+import (
+	"AB_system/internal/domain/models"
+	"AB_system/internal/repository"
+	"context"
+	"github.com/google/uuid"
+	"gorm.io/gorm"
+)
+
+type RoleRepository struct {
+	db *gorm.DB
+}
+
+func NewRoleRepository(db *gorm.DB) *RoleRepository {
+	return &RoleRepository{
+		db: db,
+	}
+}
+func (r *RoleRepository) GetAllRoles(ctx context.Context) ([]models.Role, error) {
+	const op = "GetAllRoles"
+	var roles []models.Role
+	result := r.db.WithContext(ctx).Find(&roles)
+	if err := repository.CheckError(ctx, op, result.Error); err != nil {
+		return nil, err
+	}
+	return roles, nil
+}
+func (r *RoleRepository) GetRoleByID(ctx context.Context, roleID uuid.UUID) (models.Role, error) {
+	const op = "GetRoleByID"
+	var role models.Role
+	result := r.db.WithContext(ctx).First(&role, "id = ?", roleID)
+	if err := repository.CheckError(ctx, op, result.Error); err != nil {
+		return models.Role{}, err
+	}
+	return role, nil
+}
+func (r *RoleRepository) DeleteRole(ctx context.Context, roleID uuid.UUID) error {
+	const op = "DeleteRole"
+	var role models.Role
+	result := r.db.WithContext(ctx).Delete(&role, "id = ?", roleID)
+	if err := repository.CheckError(ctx, op, result.Error); err != nil {
+		return err
+	}
+	return nil
+}
+func (r *RoleRepository) ExistsRole(ctx context.Context, roleID uuid.UUID) (bool, error) {
+	var count int64
+	result := r.db.WithContext(ctx).Model(&models.Role{}).Where("id = ?", roleID).Count(&count)
+	if result.Error != nil {
+		return false, repository.CheckError(ctx, `role`, result.Error)
+	}
+	return count > 0, nil
+}
+
+
+================================================================================
+ФАЙЛ: C:\Users\Karimi\GolandProjects\AB_system\internal\repository\postgres\users.go
+================================================================================
+package postgres
+
+import (
+	"AB_system/internal/domain/models"
+	"AB_system/internal/http/observability"
+	"AB_system/internal/repository"
+	"AB_system/pkg/errs"
+	"context"
+	"log/slog"
+
+	"github.com/google/uuid"
+	"gorm.io/gorm"
+)
+
+type UserRepository struct {
+	db *gorm.DB
+}
+
+func NewUserRepository(db *gorm.DB) *UserRepository {
+	return &UserRepository{db: db}
+}
+
+func (r *UserRepository) CreateUser(ctx context.Context, user *models.User) (*models.User, error) {
+	const op = "CreateUser"
+	err := r.db.WithContext(ctx).Create(user).Error
+	if err := repository.CheckError(ctx, op, err); err != nil {
+		return nil, err
+	}
+	slog.InfoContext(ctx, "user created",
+		"op", op,
+		"trace_id", observability.GetTraceID(ctx),
+		"user_id", user.ID,
+	)
+	return user, nil
+}
+
+func (r *UserRepository) UpdateUser(ctx context.Context, u *models.User) error {
+	const op = "UpdateUser"
+	res := r.db.WithContext(ctx).
+		Model(&models.User{}).
+		Where("id = ?", u.ID).
+		Select("Name", "RoleID", "IsActive").
+		Updates(u)
+	if err := repository.CheckError(ctx, op, res.Error); err != nil {
+		return err
+	}
+	if res.RowsAffected == 0 {
+		return errs.ErrUserNotFound
+	}
+	return nil
+}
+
+func (r *UserRepository) DeleteUser(ctx context.Context, id uuid.UUID) error {
+	const op = "DeleteUser"
+	res := r.db.WithContext(ctx).Delete(&models.User{}, "id = ?", id)
+	if err := repository.CheckError(ctx, op, res.Error); err != nil {
+		return err
+	}
+	if res.RowsAffected == 0 {
+		return errs.ErrUserNotFound
+	}
+	return nil
+}
+
+func (r *UserRepository) GetAllUser(ctx context.Context) ([]models.User, error) {
+	const op = "GetAllUser"
+	var users []models.User
+	err := r.db.WithContext(ctx).Preload("Role").Find(&users).Error
+	if err := repository.CheckError(ctx, op, err); err != nil {
+		return nil, err
+	}
+	return users, nil
+}
+
+func (r *UserRepository) GetUserByID(ctx context.Context, id uuid.UUID) (models.User, error) {
+	const op = "GetUserByID"
+	var user models.User
+	err := r.db.WithContext(ctx).Preload("Role").First(&user, "id = ?", id).Error
+	if err := repository.CheckError(ctx, op, err); err != nil {
+		return models.User{}, err
+	}
+	return user, nil
+}
+
+func (r *UserRepository) ExistsUser(ctx context.Context, id uuid.UUID) (bool, error) {
+	const op = "ExistsUser"
+	var count int64
+	err := r.db.WithContext(ctx).Model(&models.User{}).Where("id = ?", id).Count(&count).Error
+	if err := repository.CheckError(ctx, op, err); err != nil {
+		return false, err
+	}
+	return count > 0, nil
+}
+
+func (r *UserRepository) ExistsUserByEmail(ctx context.Context, email string) (bool, error) {
+	const op = "ExistsUserByEmail"
+	var count int64
+	err := r.db.WithContext(ctx).Model(&models.User{}).Where("email = ?", email).Count(&count).Error
+	if err := repository.CheckError(ctx, op, err); err != nil {
+		return false, err
+	}
+	return count > 0, nil
+}
+
+
+================================================================================
+ФАЙЛ: C:\Users\Karimi\GolandProjects\AB_system\internal\server\server.go
+================================================================================
+package server
+
+import (
+	"context"
+	"errors"
+	"log/slog"
+	"net/http"
+	"time"
+)
+
+type Server struct {
+	httpServer *http.Server
+}
+
+func New(port string, handler http.Handler) *Server {
+	return &Server{
+		httpServer: &http.Server{
+			Addr:              ":" + port,
+			Handler:           handler,
+			MaxHeaderBytes:    1 << 20, // 1 МБ
+			ReadHeaderTimeout: 5 * time.Second,
+			ReadTimeout:       10 * time.Second,
+			WriteTimeout:      10 * time.Second,
+		},
+	}
+}
+
+func (s *Server) Run() error {
+	slog.Info("http server started", "addr", s.httpServer.Addr)
+	if err := s.httpServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		return err
+	}
+	return nil
+}
+
+func (s *Server) Shutdown(ctx context.Context) error {
+	ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+	return s.httpServer.Shutdown(ctx)
+}
+
+
+================================================================================
+ФАЙЛ: C:\Users\Karimi\GolandProjects\AB_system\logger\logger.go
+================================================================================
+package logger
+
+import (
+	"log/slog"
+	"os"
+)
+
+func Init(level string) {
+	var lvl slog.Level
+	if err := lvl.UnmarshalText([]byte(level)); err != nil {
+		lvl = slog.LevelInfo
+	}
+	h := slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: lvl})
+	slog.SetDefault(slog.New(h))
+}
+
+
+================================================================================
+ФАЙЛ: C:\Users\Karimi\GolandProjects\AB_system\pkg\db\postgres\connection.go
+================================================================================
+package postgres
+
+import (
+	"AB_system/internal/configs"
+	"context"
+	"fmt"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
+	"log/slog"
+	"time"
+)
+
+// pkg/db/postgres/connection.go
+func ConnectDB(ctx context.Context, c configs.DB) (*gorm.DB, error) {
+	dsn := fmt.Sprintf(
+		"host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
+		c.Host, c.Port, c.User, c.Password, c.Name,
+	)
+
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
+		TranslateError: true, // чтобы работал gorm.ErrDuplicatedKey
+	})
+	if err != nil {
+		return nil, fmt.Errorf("open db: %w", err)
+	}
+
+	sqlDB, err := db.DB()
+	if err != nil {
+		return nil, fmt.Errorf("get sql.DB: %w", err)
+	}
+	sqlDB.SetMaxOpenConns(25)
+	sqlDB.SetMaxIdleConns(5)
+	sqlDB.SetConnMaxLifetime(30 * time.Minute)
+
+	pingCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+	if err := sqlDB.PingContext(pingCtx); err != nil {
+		return nil, fmt.Errorf("ping db: %w", err)
+	}
+
+	slog.Info("connected to postgres", "db", c.Name)
+	return db, nil
+}
+
+func CloseDB(db *gorm.DB) error {
+	sqlDB, err := db.DB()
+	if err != nil {
+		return err
+	}
+	return sqlDB.Close()
+}
+
+
+================================================================================
+ФАЙЛ: C:\Users\Karimi\GolandProjects\AB_system\pkg\db\postgres\migration.go
+================================================================================
+package postgres
+
+import (
+	"AB_system/internal/domain/models"
+	"AB_system/internal/repository"
+	"errors"
+	"gorm.io/gorm"
+)
+
+func Migrate(dbConn *gorm.DB) error {
+	if dbConn == nil {
+		return errors.New("database connection is not initialized")
+	}
+
+	tables := []interface{}{
+		&models.Role{},
+		&models.User{},
+		&models.FeatureFlag{},
+		&models.Experiment{},
+		&models.ExperimentVariant{},
+		&models.ExperimentApproval{},
+		&models.ExperimentVersion{},
+	}
+	for _, table := range tables {
+		if err := dbConn.AutoMigrate(table); err != nil {
+			return err
+		}
+	}
+
+	// не более одного running/paused эксперимента на флаг
+	if err := dbConn.Exec(`
+		CREATE UNIQUE INDEX IF NOT EXISTS uniq_active_experiment_per_flag
+		ON experiments (feature_flag_id)
+		WHERE status IN ('running', 'paused') AND deleted_at IS NULL`).Error; err != nil {
+		return err
+	}
+
+	if err := SeedRoles(dbConn); err != nil {
+		return err
+	}
+	if err := SeedAdmin(dbConn); err != nil {
+		return err
+	}
+	return nil
+
+}
+
+func SeedRoles(db *gorm.DB) error {
+	names := []string{
+		models.RoleAdmin, models.RoleExperimenter,
+		models.RoleApprover, models.RoleViewer,
+	}
+	for _, name := range names {
+		role := models.Role{RoleName: name}
+		if err := db.Where("role_name = ?", name).FirstOrCreate(&role).Error; err != nil {
+			return err
+		}
+	}
+	return nil
+}
+func SeedAdmin(db *gorm.DB) error {
+	var a models.Role
+	err := db.Model(&models.Role{}).Where("role_name", models.RoleAdmin).First(&a).Error
+	if err != nil {
+		return repository.TranslateGormError(err)
+
+	}
+
+	admin := models.User{
+		Email:  "firuzz.7@gmail.com",
+		Name:   "Firuz",
+		RoleID: a.ID,
+	}
+	if err := db.Where("email", admin.Email).FirstOrCreate(&admin).Error; err != nil {
+		return repository.TranslateGormError(err)
+	}
+	return nil
+}
+
+
+================================================================================
+ФАЙЛ: C:\Users\Karimi\GolandProjects\AB_system\pkg\errs\err_conflict.go
+================================================================================
+package errs
+
+import "errors"
+
+var (
+	ErrConflict              = errors.New("конфликт версий, обновите данные")
+	ErrExperimentNotEditable = errors.New("эксперимент нельзя изменять в текущем статусе")
+	ErrInvalidTransition     = errors.New("недопустимый переход статуса")
+)
+
+
+================================================================================
+ФАЙЛ: C:\Users\Karimi\GolandProjects\AB_system\pkg\errs\experiments.go
+================================================================================
+package errs
+
+import "errors"
+
+var (
+	ErrExperimentNameIsEmpty = errors.New("experiment name is empty")
+
+	ErrExperimentNotFound      = errors.New("experiment not found")
+	ErrExperimentVariantsEmpty = errors.New("experiment variants is empty")
+	ErrWeightsSumMismatch      = errors.New("experiment weights sum mismatch")
+	ErrControlVariantCount     = errors.New("experiment must have exactly one control variant")
+)
+var (
+	ErrExperimentVariantNotFound     = errors.New("experiment variant not found")
+	ErrExperimentVariantWeightIsNil  = errors.New("experiment variant weight is nil")
+	ErrExperimentVariantValueIsEmpty = errors.New("experiment variant value is empty")
+	ErrExperimentVariantNameIsEmpty  = errors.New("experiment variant name is empty")
+	ErrExperimentIDIsNil             = errors.New("experiment id is nil")
+)
+
+
+================================================================================
+ФАЙЛ: C:\Users\Karimi\GolandProjects\AB_system\pkg\errs\feature_flags.go
+================================================================================
+package errs
+
+import "errors"
+
+var (
+	ErrKeyIsEmpty          = errors.New("key is empty")
+	ErrValueTypeIsEmpty    = errors.New("value type is empty")
+	ErrDefaultValueIsEmpty = errors.New("default value is empty")
+	ErrFeatureFlagNotFound = errors.New("feature flag not found")
+)
+
+
+================================================================================
+ФАЙЛ: C:\Users\Karimi\GolandProjects\AB_system\pkg\errs\general_errs.go
+================================================================================
+package errs
+
+import "errors"
+
+var (
+	ErrRecordNotFound   = errors.New("запись не найдена в базе данных")
+	ErrPermissionDenied = errors.New("недостаточно прав для выполнения данной операции")
+	ErrIdIsInvalid      = errors.New("неверный UUID")
+	ErrDeleteFailed     = errors.New("не удалось удалить запись из базы данных")
+	ErrCantParseToTime  = errors.New("cannot parse")
+)
+
+
+================================================================================
+ФАЙЛ: C:\Users\Karimi\GolandProjects\AB_system\pkg\errs\gorm_error.go
+================================================================================
+package errs
+
+import "errors"
+
+var (
+	ErrDuplicateEntry    = errors.New("запись с такими данными уже существует")
+	ErrInvalidField      = errors.New("указано недопустимое значение поля")
+	ErrUnsupportedDriver = errors.New("используемый драйвер базы данных не поддерживается")
+	ErrNotImplemented    = errors.New("функционал еще не реализован")
+)
+
+
+================================================================================
+ФАЙЛ: C:\Users\Karimi\GolandProjects\AB_system\pkg\errs\users.go
+================================================================================
+package errs
+
+import "errors"
+
+var (
+	ErrEmailIsEmpty          = errors.New("email не может быть пустым")
+	ErrNameIsEmpty           = errors.New("name не может быть пустым")
+	ErrEmailUniquenessFailed = errors.New("пользователь с таким email уже зарегистрирован в системе")
+	ErrUserNotFound          = errors.New("пользователь не найден")
+	ErrIdIsEmpty             = errors.New("id не может быть пустым")
+	ErrRoleNotFound          = errors.New("role не найдено")
+)
+
+
