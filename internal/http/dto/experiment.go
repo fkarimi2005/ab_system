@@ -60,6 +60,7 @@ func NewExperimentResponse(e *models.Experiment) ExperimentResponse {
 		ID: e.ID, FeatureFlagID: e.FeatureFlagID, Name: e.Name,
 		Status: string(e.Status), AudienceBP: e.AudienceBP, Version: e.Version,
 		OwnerID: e.OwnerID, CreatedAt: e.CreatedAt,
+		Variants: make([]VariantResponse, 0, len(e.Variants)),
 	}
 	for _, v := range e.Variants {
 		res.Variants = append(res.Variants, VariantResponse{

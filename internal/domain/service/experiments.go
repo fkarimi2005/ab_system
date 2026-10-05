@@ -31,6 +31,7 @@ func (s *ExperimentService) CreateExperiment(
 		if errors.Is(err, errs.ErrRecordNotFound) {
 			return nil, errs.ErrFeatureFlagNotFound
 		}
+		return nil, err
 	}
 
 	variants := make([]models.ExperimentVariant, 0, len(in.Variants))
@@ -61,7 +62,7 @@ func (s *ExperimentService) CreateExperiment(
 	})
 }
 func (s *ExperimentService) UpdateExperiment(
-	ctx context.Context, id, actorID uuid.UUID, in input.UpdateExperimentInput,
+	ctx context.Context, id uuid.UUID, actor models.Actor, in input.UpdateExperimentInput,
 ) error {
 	cur, err := s.experimentRepo.GetExperimentByID(ctx, id)
 	if err != nil {
@@ -70,15 +71,18 @@ func (s *ExperimentService) UpdateExperiment(
 		}
 		return err
 	}
+	if cur.OwnerID != actor.ID && actor.Role != models.RoleAdmin {
+		return errs.ErrPermissionDenied
+	}
 	if cur.Status != models.ExperimentStatusDraft {
 		return errs.ErrExperimentNotEditable
-	}
-	if cur.OwnerID != actorID { // позже: или роль admin
-		return errs.ErrPermissionDenied
 	}
 
 	flag, err := s.flagRepo.GetFeatureFlagByID(ctx, cur.FeatureFlagID)
 	if err != nil {
+		if errors.Is(err, errs.ErrRecordNotFound) {
+			return errs.ErrFeatureFlagNotFound
+		}
 		return err
 	}
 

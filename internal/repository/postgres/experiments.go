@@ -5,6 +5,7 @@ import (
 	"AB_system/internal/repository"
 	"AB_system/pkg/errs"
 	"context"
+	"encoding/json"
 	"errors"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -26,7 +27,8 @@ func (r *ExperimentRepository) GetAllExperiments(
 	const op = "GetAllExperiments"
 	var result []models.Experiment
 	err := r.db.WithContext(ctx).
-		Preload("User").
+		Preload("Variants").
+		Order("created_at DESC").
 		Find(&result).Error
 	if err := repository.CheckError(ctx, op, err); err != nil {
 		return nil, err
@@ -40,7 +42,6 @@ func (r *ExperimentRepository) GetExperimentByID(
 	const op = "GetExperimentByID"
 	var result models.Experiment
 	err := r.db.WithContext(ctx).
-		Preload("User").
 		Preload("Variants").
 		First(&result, "id = ?", experimentID).Error
 	if err := repository.CheckError(ctx, op, err); err != nil {
@@ -114,8 +115,21 @@ func (r *ExperimentRepository) CreateExperiment(
 	experiment *models.Experiment,
 ) (*models.Experiment, error) {
 	const op = "CreateExperiment"
-	result := r.db.WithContext(ctx).Create(experiment).Error
-	if err := repository.CheckError(ctx, op, result); err != nil {
+	err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := tx.Create(experiment).Error; err != nil {
+			return err
+		}
+		snapshot, err := json.Marshal(experiment)
+		if err != nil {
+			return err
+		}
+		return tx.Create(&models.ExperimentVersion{
+			ExperimentID: experiment.ID,
+			Version:      experiment.Version,
+			Snapshot:     snapshot,
+		}).Error
+	})
+	if err := repository.CheckError(ctx, op, err); err != nil {
 		return nil, err
 	}
 	return experiment, nil

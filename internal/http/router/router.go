@@ -19,13 +19,13 @@ type Deps struct {
 
 func New(d Deps) *gin.Engine {
 	r := gin.New()
-	r.Use(d.Auth)
 	r.Use(gin.Recovery(), middlewares.TraceID(), middlewares.RequestLogger())
 
 	r.GET("/health", d.Health.Health)
 	r.GET("/ready", d.Health.Ready)
 
 	api := r.Group("/api/v1")
+	api.Use(d.Auth)
 
 	for _, h := range d.Handlers {
 		h.Register(api)
