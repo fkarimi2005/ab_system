@@ -136,3 +136,15 @@ func (s *ApprovalService) moveFromReview(
 	}
 	return nil
 }
+func (s *ApprovalService) List(
+	ctx context.Context, experimentID uuid.UUID,
+) ([]models.ExperimentApproval, error) {
+	exists, err := s.experimentRepo.ExperimentExists(ctx, experimentID)
+	if err != nil {
+		return nil, err
+	}
+	if !exists {
+		return nil, errs.ErrExperimentNotFound
+	}
+	return s.approvalRepo.GetApprovalsByExperimentID(ctx, experimentID)
+}
