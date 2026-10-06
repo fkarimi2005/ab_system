@@ -20,8 +20,6 @@ func Migrate(dbConn *gorm.DB) error {
 		&models.ExperimentVariant{},
 		&models.ExperimentApproval{},
 		&models.ExperimentVersion{},
-		&models.ApproverGroup{},
-		&models.ApproverGroupMember{},
 	}
 	for _, table := range tables {
 		if err := dbConn.AutoMigrate(table); err != nil {

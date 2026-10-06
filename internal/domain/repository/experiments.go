@@ -37,23 +37,20 @@ type ExperimentWriter interface {
 }
 
 type ExperimentLifecycle interface {
-	// TransitionStatus атомарно меняет статус from -> to;
-	// errs.ErrInvalidTransition, если текущий статус уже не from.
-	TransitionStatus(
+	TransitionExperiment(
 		ctx context.Context,
 		experimentID uuid.UUID,
-		from, to models.ExperimentStatus,
+		status models.ExperimentStatus,
 	) error
-}
 
-type ExperimentVersions interface {
-	ListVersions(ctx context.Context, experimentID uuid.UUID) ([]models.ExperimentVersion, error)
-	GetVersion(ctx context.Context, experimentID uuid.UUID, version int) (models.ExperimentVersion, error)
+	CompleteExperiment(
+		ctx context.Context,
+		experimentID uuid.UUID,
+	) error
 }
 
 type ExperimentRepository interface {
 	ExperimentReader
 	ExperimentWriter
 	ExperimentLifecycle
-	ExperimentVersions
 }

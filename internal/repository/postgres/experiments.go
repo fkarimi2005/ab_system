@@ -135,49 +135,39 @@ func (r *ExperimentRepository) CreateExperiment(
 	return experiment, nil
 }
 
-func (r *ExperimentRepository) TransitionStatus(
+func (r *ExperimentRepository) TransitionExperiment(
 	ctx context.Context,
 	experimentID uuid.UUID,
-	from, to models.ExperimentStatus,
+	status models.ExperimentStatus,
 ) error {
-	const op = "TransitionStatus"
-	res := r.db.WithContext(ctx).
+	const op = "TransitionExperiment"
+	result := r.db.WithContext(ctx).
 		Model(&models.Experiment{}).
-		Where("id = ? AND status = ?", experimentID, from).
-		Update("status", to)
-	if err := repository.CheckError(ctx, op, res.Error); err != nil {
+		Where("id = ?", experimentID).
+		Update("status", status)
+
+	if err := repository.CheckError(ctx, op, result.Error); err != nil {
 		return err
 	}
-	if res.RowsAffected == 0 {
-		return errs.ErrInvalidTransition
+	if result.RowsAffected == 0 {
+		return errs.ErrExperimentNotFound
 	}
+
 	return nil
 }
-
-func (r *ExperimentRepository) ListVersions(
-	ctx context.Context, experimentID uuid.UUID,
-) ([]models.ExperimentVersion, error) {
-	const op = "ListVersions"
-	var res []models.ExperimentVersion
-	err := r.db.WithContext(ctx).
-		Where("experiment_id = ?", experimentID).
-		Order("version ASC").
-		Find(&res).Error
-	if err := repository.CheckError(ctx, op, err); err != nil {
-		return nil, err
+func (r *ExperimentRepository) CompleteExperiment(
+	ctx context.Context,
+	experimentID uuid.UUID,
+) error {
+	const op = "CompleteExperiment"
+	result := r.db.WithContext(ctx).Model(&models.Experiment{}).
+		Where("id = ?", experimentID).
+		Update("status", models.ExperimentStatusCompleted)
+	if err := repository.CheckError(ctx, op, result.Error); err != nil {
+		return err
 	}
-	return res, nil
-}
-
-func (r *ExperimentRepository) GetVersion(
-	ctx context.Context, experimentID uuid.UUID, version int,
-) (models.ExperimentVersion, error) {
-	const op = "GetVersion"
-	var res models.ExperimentVersion
-	err := r.db.WithContext(ctx).
-		First(&res, "experiment_id = ? AND version = ?", experimentID, version).Error
-	if err := repository.CheckError(ctx, op, err); err != nil {
-		return models.ExperimentVersion{}, err
+	if result.RowsAffected == 0 {
+		return errs.ErrExperimentNotFound
 	}
-	return res, nil
+	return nil
 }

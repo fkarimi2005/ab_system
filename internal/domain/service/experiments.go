@@ -115,24 +115,3 @@ func (s *ExperimentService) GetExperiments(ctx context.Context) ([]models.Experi
 	return s.experimentRepo.GetAllExperiments(ctx)
 
 }
-
-func (s *ExperimentService) GetVersions(ctx context.Context, id uuid.UUID) ([]models.ExperimentVersion, error) {
-	if _, err := s.GetExperimentByID(ctx, id); err != nil {
-		if errors.Is(err, errs.ErrRecordNotFound) {
-			return nil, errs.ErrExperimentNotFound
-		}
-		return nil, err
-	}
-	return s.experimentRepo.ListVersions(ctx, id)
-}
-
-func (s *ExperimentService) GetVersion(ctx context.Context, id uuid.UUID, version int) (models.ExperimentVersion, error) {
-	v, err := s.experimentRepo.GetVersion(ctx, id, version)
-	if err != nil {
-		if errors.Is(err, errs.ErrRecordNotFound) {
-			return models.ExperimentVersion{}, errs.ErrVersionNotFound
-		}
-		return models.ExperimentVersion{}, err
-	}
-	return v, nil
-}

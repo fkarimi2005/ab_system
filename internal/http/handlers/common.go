@@ -41,7 +41,6 @@ func mapError(err error) (int, string) {
 		errors.Is(err, errs.ErrUserNotFound),
 		errors.Is(err, errs.ErrRoleNotFound),
 		errors.Is(err, errs.ErrExperimentNotFound),
-		errors.Is(err, errs.ErrVersionNotFound),
 		errors.Is(err, errs.ErrRecordNotFound):
 		return http.StatusNotFound, err.Error()
 
@@ -49,13 +48,10 @@ func mapError(err error) (int, string) {
 		errors.Is(err, errs.ErrEmailUniquenessFailed),
 		errors.Is(err, errs.ErrConflict),
 		errors.Is(err, errs.ErrExperimentNotEditable),
-		errors.Is(err, errs.ErrInvalidTransition),
-		errors.Is(err, errs.ErrActiveExperimentExists):
+		errors.Is(err, errs.ErrInvalidTransition):
 		return http.StatusConflict, err.Error()
 
-	case errors.Is(err, errs.ErrPermissionDenied),
-		errors.Is(err, errs.ErrSelfApproval),
-		errors.Is(err, errs.ErrNotInApproverGroup):
+	case errors.Is(err, errs.ErrPermissionDenied):
 		return http.StatusForbidden, err.Error()
 
 	case errors.Is(err, errs.ErrKeyIsEmpty),
@@ -69,9 +65,7 @@ func mapError(err error) (int, string) {
 		errors.Is(err, errs.ErrExperimentNameIsEmpty),
 		errors.Is(err, errs.ErrExperimentVariantsEmpty),
 		errors.Is(err, errs.ErrWeightsSumMismatch),
-		errors.Is(err, errs.ErrControlVariantCount),
-		errors.Is(err, errs.ErrCommentRequired),
-		errors.Is(err, errs.ErrInvalidApproverGroup):
+		errors.Is(err, errs.ErrControlVariantCount):
 		return http.StatusBadRequest, err.Error()
 
 	default:
