@@ -37,15 +37,10 @@ type ExperimentWriter interface {
 }
 
 type ExperimentLifecycle interface {
-	TransitionExperiment(
+	TransitionStatus(
 		ctx context.Context,
 		experimentID uuid.UUID,
-		status models.ExperimentStatus,
-	) error
-
-	CompleteExperiment(
-		ctx context.Context,
-		experimentID uuid.UUID,
+		from, to models.ExperimentStatus,
 	) error
 }
 

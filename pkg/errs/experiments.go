@@ -9,6 +9,7 @@ var (
 	ErrExperimentVariantsEmpty = errors.New("experiment variants is empty")
 	ErrWeightsSumMismatch      = errors.New("experiment weights sum mismatch")
 	ErrControlVariantCount     = errors.New("experiment must have exactly one control variant")
+	ErrCommentRequired         = errors.New("comment is required")
 )
 var (
 	ErrExperimentVariantNotFound     = errors.New("experiment variant not found")

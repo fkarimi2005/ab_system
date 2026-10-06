@@ -135,39 +135,23 @@ func (r *ExperimentRepository) CreateExperiment(
 	return experiment, nil
 }
 
-func (r *ExperimentRepository) TransitionExperiment(
+func (r *ExperimentRepository) TransitionStatus(
 	ctx context.Context,
 	experimentID uuid.UUID,
-	status models.ExperimentStatus,
+	from, to models.ExperimentStatus,
 ) error {
-	const op = "TransitionExperiment"
+	const op = "TransitionStatus"
+
 	result := r.db.WithContext(ctx).
 		Model(&models.Experiment{}).
-		Where("id = ?", experimentID).
-		Update("status", status)
+		Where("id = ? AND status = ?", experimentID, from).
+		Update("status", to)
 
 	if err := repository.CheckError(ctx, op, result.Error); err != nil {
 		return err
 	}
 	if result.RowsAffected == 0 {
-		return errs.ErrExperimentNotFound
-	}
-
-	return nil
-}
-func (r *ExperimentRepository) CompleteExperiment(
-	ctx context.Context,
-	experimentID uuid.UUID,
-) error {
-	const op = "CompleteExperiment"
-	result := r.db.WithContext(ctx).Model(&models.Experiment{}).
-		Where("id = ?", experimentID).
-		Update("status", models.ExperimentStatusCompleted)
-	if err := repository.CheckError(ctx, op, result.Error); err != nil {
-		return err
-	}
-	if result.RowsAffected == 0 {
-		return errs.ErrExperimentNotFound
+		return errs.ErrInvalidTransition
 	}
 	return nil
 }
