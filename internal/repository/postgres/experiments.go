@@ -155,3 +155,36 @@ func (r *ExperimentRepository) TransitionStatus(
 	}
 	return nil
 }
+func (r *ExperimentRepository) ListVersions(
+	ctx context.Context,
+	experimentID uuid.UUID,
+) ([]models.ExperimentVersion, error) {
+	const op = "ListVersions"
+	var result []models.ExperimentVersion
+	err := r.db.WithContext(ctx).
+		Model(&models.ExperimentVersion{}).
+		Where("experiment_id = ?", experimentID).
+		Order("version ASC").
+		Find(&result).Error
+	if err := repository.CheckError(ctx, op, err); err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+func (r *ExperimentRepository) GetVersion(ctx context.Context,
+	experimentID uuid.UUID,
+	version int,
+) (models.ExperimentVersion, error) {
+	const op = "GetVersion"
+	var result models.ExperimentVersion
+	err := r.db.WithContext(ctx).
+		Model(&models.ExperimentVersion{}).
+		Where("experiment_id = ? AND version = ?", experimentID, version).
+		First(&result).Error
+	if err := repository.CheckError(ctx, op, err); err != nil {
+		return models.ExperimentVersion{}, err
+
+	}
+	return result, nil
+}

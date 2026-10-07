@@ -11,11 +11,5 @@ var (
 	ErrControlVariantCount     = errors.New("experiment must have exactly one control variant")
 	ErrCommentRequired         = errors.New("comment is required")
 	ErrActiveExperimentExists  = errors.New("на этом флаге уже есть запущенный или приостановленный эксперимент")
-)
-var (
-	ErrExperimentVariantNotFound     = errors.New("experiment variant not found")
-	ErrExperimentVariantWeightIsNil  = errors.New("experiment variant weight is nil")
-	ErrExperimentVariantValueIsEmpty = errors.New("experiment variant value is empty")
-	ErrExperimentVariantNameIsEmpty  = errors.New("experiment variant name is empty")
-	ErrExperimentIDIsNil             = errors.New("experiment id is nil")
+	ErrVersionNotFound         = errors.New("версия эксперимента не найдено")
 )

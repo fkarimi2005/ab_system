@@ -43,9 +43,14 @@ type ExperimentLifecycle interface {
 		from, to models.ExperimentStatus,
 	) error
 }
+type ExperimentVersions interface {
+	ListVersions(ctx context.Context, experimentID uuid.UUID) ([]models.ExperimentVersion, error)
+	GetVersion(ctx context.Context, experimentID uuid.UUID, version int) (models.ExperimentVersion, error)
+}
 
 type ExperimentRepository interface {
 	ExperimentReader
 	ExperimentWriter
 	ExperimentLifecycle
+	ExperimentVersions
 }

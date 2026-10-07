@@ -37,7 +37,6 @@ func (r transitionRule) allows(s models.ExperimentStatus) bool {
 	return false
 }
 
-// Единственное место, где описаны допустимые переходы.
 var transitionRules = map[Action]transitionRule{
 	ActionSubmit:   {from: []models.ExperimentStatus{models.ExperimentStatusDraft}, to: models.ExperimentStatusReview},
 	ActionRework:   {from: []models.ExperimentStatus{models.ExperimentStatusRejected}, to: models.ExperimentStatusDraft},
@@ -66,21 +65,17 @@ func (s *ExperimentService) Transition(
 	if e.OwnerID != actor.ID && !actor.IsAdmin() {
 		return models.Experiment{}, errs.ErrPermissionDenied
 	}
-	// было: if e.Status != rule.from {
 	if !rule.allows(e.Status) {
 		return models.Experiment{}, errs.ErrInvalidTransition
 	}
 
-	// на ревью уходит только корректная конфигурация
 	if action == ActionSubmit {
 		if err := s.validateForReview(ctx, e); err != nil {
 			return models.Experiment{}, err
 		}
 	}
 
-	// было: TransitionStatus(ctx, e.ID, rule.from, rule.to)
 	if err := s.experimentRepo.TransitionStatus(ctx, e.ID, e.Status, rule.to); err != nil {
-		// сработал частичный уникальный индекс: на флаге уже есть активный эксперимент
 		if action == ActionStart && errors.Is(err, errs.ErrDuplicateEntry) {
 			return models.Experiment{}, errs.ErrActiveExperimentExists
 		}

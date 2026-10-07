@@ -5,8 +5,10 @@ import (
 	"AB_system/internal/domain/service"
 	"AB_system/internal/http/dto"
 	"AB_system/internal/http/middlewares"
+	"AB_system/pkg/errs"
 	"github.com/gin-gonic/gin"
 	"net/http"
+	"strconv"
 )
 
 type ExperimentHandler struct {
@@ -25,6 +27,8 @@ func (h *ExperimentHandler) Register(r *gin.RouterGroup) {
 	g.POST("", write, h.Create)
 	g.GET("", h.List)
 	g.GET("/:id", h.Get)
+	g.GET("/:id/versions", h.Versions)
+	g.GET("/:id/versions/:version", h.Version)
 	g.PUT("/:id", write, h.Update)
 
 	g.POST("/:id/submit", write, h.transition(service.ActionSubmit))
@@ -123,4 +127,38 @@ func (h *ExperimentHandler) Update(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, dto.NewExperimentResponse(&e))
+}
+func (h *ExperimentHandler) Versions(c *gin.Context) {
+	id, ok := parseUUID(c, "id")
+	if !ok {
+		return
+	}
+	list, err := h.svc.GetVersions(c.Request.Context(), id)
+	if err != nil {
+		writeError(c, err)
+		return
+	}
+	res := make([]dto.VersionResponse, 0, len(list))
+	for _, v := range list {
+		res = append(res, dto.NewVersionResponse(v))
+	}
+	c.JSON(http.StatusOK, res)
+}
+
+func (h *ExperimentHandler) Version(c *gin.Context) {
+	id, ok := parseUUID(c, "id")
+	if !ok {
+		return
+	}
+	n, err := strconv.Atoi(c.Param("version"))
+	if err != nil || n < 1 {
+		writeError(c, errs.ErrInvalidField)
+		return
+	}
+	v, err := h.svc.GetVersion(c.Request.Context(), id, n)
+	if err != nil {
+		writeError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, dto.NewVersionResponse(v))
 }
