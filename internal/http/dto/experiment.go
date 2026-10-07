@@ -78,15 +78,6 @@ func (r UpdateExperimentRequest) ToInput() input.UpdateExperimentInput {
 	}
 	return in
 }
-func ToVariantModels(in []input.VariantInput) []models.ExperimentVariant {
-	res := make([]models.ExperimentVariant, 0, len(in))
-	for _, v := range in {
-		res = append(res, models.ExperimentVariant{
-			Name: v.Name, Value: v.Value, Weight: v.WeightBP, IsControl: v.IsControl,
-		})
-	}
-	return res
-}
 
 type UpdateExperimentRequest struct {
 	Name       string           `json:"name" binding:"required,max=255"`

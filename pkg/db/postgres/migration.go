@@ -67,9 +67,10 @@ func SeedAdmin(db *gorm.DB) error {
 	}
 
 	admin := models.User{
-		Email:  "firuzz.7@gmail.com",
-		Name:   "Firuz",
-		RoleID: a.ID,
+		Email:    "firuzz.7@gmail.com",
+		Name:     "Firuz",
+		RoleID:   a.ID,
+		IsActive: true,
 	}
 	if err := db.Where("email", admin.Email).FirstOrCreate(&admin).Error; err != nil {
 		return repository.TranslateGormError(err)

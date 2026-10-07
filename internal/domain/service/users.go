@@ -3,9 +3,10 @@ package service
 import (
 	"AB_system/internal/domain/models"
 	"AB_system/internal/domain/repository"
-	service "AB_system/internal/domain/service/input"
+	"AB_system/internal/domain/service/input"
 	"AB_system/pkg/errs"
 	"context"
+	"fmt"
 	"github.com/google/uuid"
 )
 
@@ -38,7 +39,7 @@ func (s *UserService) CreateUser(ctx context.Context, user models.User) (*models
 	}
 	return s.userRepo.CreateUser(ctx, &user)
 }
-func (s *UserService) UpdateUser(ctx context.Context, ID uuid.UUID, in service.UpdateUserInput) (*models.User, error) {
+func (s *UserService) UpdateUser(ctx context.Context, ID uuid.UUID, in input.UpdateUserInput) (*models.User, error) {
 	exists, err := s.userRepo.ExistsUser(ctx, ID)
 	if err != nil {
 		return nil, err
@@ -65,7 +66,7 @@ func (s *UserService) UpdateUser(ctx context.Context, ID uuid.UUID, in service.U
 			return nil, err
 		}
 		if !exists {
-			return nil, errs.ErrRoleNotFound
+			return nil, fmt.Errorf("%w: роль не найдена", errs.ErrInvalidField)
 		}
 		u.RoleID = *in.RoleID
 
@@ -79,17 +80,9 @@ func (s *UserService) UpdateUser(ctx context.Context, ID uuid.UUID, in service.U
 	return &u, nil
 }
 func (s *UserService) DeleteUser(ctx context.Context, userID uuid.UUID) error {
-	if userID == uuid.Nil {
-		return errs.ErrIdIsEmpty
-	}
-	exists, err := s.userRepo.ExistsUser(ctx, userID)
-	if err != nil {
-		return err
-	}
-	if !exists {
-		return errs.ErrUserNotFound
-	}
-	return s.userRepo.DeleteUser(ctx, userID)
+	off := false
+	_, err := s.UpdateUser(ctx, userID, input.UpdateUserInput{IsActive: &off})
+	return err
 }
 func (s *UserService) GetUserByID(ctx context.Context, userID uuid.UUID) (models.User, error) {
 	if userID == uuid.Nil {

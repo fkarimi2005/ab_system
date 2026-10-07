@@ -33,14 +33,8 @@ type UserWriter interface {
 		user *models.User,
 	) error
 }
-type UserDeleter interface {
-	DeleteUser(
-		ctx context.Context,
-		ID uuid.UUID,
-	) error
-}
+
 type UserRepository interface {
 	UserReader
 	UserWriter
-	UserDeleter
 }

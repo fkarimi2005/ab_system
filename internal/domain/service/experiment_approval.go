@@ -62,12 +62,10 @@ func (s *ApprovalService) Approve(
 	actor models.Actor,
 	comment string,
 ) error {
+
 	e, err := s.decide(ctx, experimentID, actor, models.ApprovalApproved, comment)
 	if err != nil {
 		return err
-	}
-	if comment == "" {
-		return errs.ErrCommentRequired
 	}
 
 	n, err := s.approvalRepo.CountApproved(ctx, e.ID, e.Version, nil)

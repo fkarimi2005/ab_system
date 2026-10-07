@@ -1,6 +1,9 @@
 package input
 
-import "github.com/google/uuid"
+import (
+	"AB_system/internal/domain/models"
+	"github.com/google/uuid"
+)
 
 // internal/domain/service/experiment_input.go
 type VariantInput struct {
@@ -20,4 +23,14 @@ type UpdateExperimentInput struct {
 	Name       string
 	AudienceBP int
 	Variants   []VariantInput
+}
+
+func ToVariantModels(in []VariantInput) []models.ExperimentVariant {
+	res := make([]models.ExperimentVariant, 0, len(in))
+	for _, v := range in {
+		res = append(res, models.ExperimentVariant{
+			Name: v.Name, Value: v.Value, Weight: v.WeightBP, IsControl: v.IsControl,
+		})
+	}
+	return res
 }

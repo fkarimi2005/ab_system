@@ -48,6 +48,7 @@ func mapError(err error) (int, string) {
 		errors.Is(err, errs.ErrEmailUniquenessFailed),
 		errors.Is(err, errs.ErrConflict),
 		errors.Is(err, errs.ErrExperimentNotEditable),
+		errors.Is(err, errs.ErrActiveExperimentExists),
 		errors.Is(err, errs.ErrInvalidTransition):
 		return http.StatusConflict, err.Error()
 
@@ -82,17 +83,7 @@ func parseUUID(c *gin.Context, param string) (uuid.UUID, bool) {
 	}
 	return id, true
 }
-func currentUserID(c *gin.Context) (uuid.UUID, bool) {
-	id, err := uuid.Parse(c.GetHeader("X-User-Id"))
-	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{
-			"error":    "нужен заголовок X-User-Id с UUID пользователя",
-			"trace_id": observability.GetTraceID(c.Request.Context()),
-		})
-		return uuid.Nil, false
-	}
-	return id, true
-}
+
 func currentActor(c *gin.Context) (models.Actor, bool) {
 	a, ok := middlewares.ActorFrom(c)
 	if !ok {

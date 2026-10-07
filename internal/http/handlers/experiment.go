@@ -14,15 +14,44 @@ type ExperimentHandler struct {
 }
 
 func NewExperimentHandler(svc *service.ExperimentService) *ExperimentHandler {
+
 	return &ExperimentHandler{svc: svc}
 }
+
 func (h *ExperimentHandler) Register(r *gin.RouterGroup) {
-	g := r.Group("/experiments")
 	write := middlewares.RequireRole(models.RoleAdmin, models.RoleExperimenter)
+	g := r.Group("/experiments")
+
 	g.POST("", write, h.Create)
 	g.GET("", h.List)
 	g.GET("/:id", h.Get)
 	g.PUT("/:id", write, h.Update)
+
+	g.POST("/:id/submit", write, h.transition(service.ActionSubmit))
+	g.POST("/:id/rework", write, h.transition(service.ActionRework))
+	g.POST("/:id/start", write, h.transition(service.ActionStart))
+	g.POST("/:id/pause", write, h.transition(service.ActionPause))
+	g.POST("/:id/resume", write, h.transition(service.ActionResume))
+	g.POST("/:id/archive", write, h.transition(service.ActionArchive))
+}
+
+func (h *ExperimentHandler) transition(action service.Action) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		id, ok := parseUUID(c, "id")
+		if !ok {
+			return
+		}
+		actor, ok := currentActor(c)
+		if !ok {
+			return
+		}
+		e, err := h.svc.Transition(c.Request.Context(), id, actor, action)
+		if err != nil {
+			writeError(c, err)
+			return
+		}
+		c.JSON(http.StatusOK, dto.NewExperimentResponse(&e))
+	}
 }
 func (h *ExperimentHandler) Create(c *gin.Context) {
 	var req dto.CreateExperimentRequest

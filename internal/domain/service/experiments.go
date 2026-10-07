@@ -5,7 +5,6 @@ import (
 	"AB_system/internal/domain/repository"
 	"AB_system/internal/domain/service/input"
 	"AB_system/internal/domain/service/validation"
-	"AB_system/internal/http/dto"
 	"AB_system/pkg/errs"
 	"context"
 	"encoding/json"
@@ -34,15 +33,7 @@ func (s *ExperimentService) CreateExperiment(
 		return nil, err
 	}
 
-	variants := make([]models.ExperimentVariant, 0, len(in.Variants))
-	for _, v := range in.Variants {
-		variants = append(variants, models.ExperimentVariant{
-			Name:      v.Name,
-			Value:     v.Value,
-			Weight:    v.WeightBP,
-			IsControl: v.IsControl,
-		})
-	}
+	variants := input.ToVariantModels(in.Variants)
 
 	if err := validation.ValidateConfig(in.Name, in.AudienceBP, variants); err != nil {
 		return nil, err
@@ -86,7 +77,7 @@ func (s *ExperimentService) UpdateExperiment(
 		return err
 	}
 
-	variants := dto.ToVariantModels(in.Variants)
+	variants := input.ToVariantModels(in.Variants)
 	if err := validation.ValidateConfig(in.Name, in.AudienceBP, variants); err != nil {
 		return err
 	}

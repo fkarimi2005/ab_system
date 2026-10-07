@@ -10,6 +10,7 @@ var (
 	ErrWeightsSumMismatch      = errors.New("experiment weights sum mismatch")
 	ErrControlVariantCount     = errors.New("experiment must have exactly one control variant")
 	ErrCommentRequired         = errors.New("comment is required")
+	ErrActiveExperimentExists  = errors.New("на этом флаге уже есть запущенный или приостановленный эксперимент")
 )
 var (
 	ErrExperimentVariantNotFound     = errors.New("experiment variant not found")

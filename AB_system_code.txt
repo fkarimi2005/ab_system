@@ -12,6 +12,14 @@ DB_NAME=ab_system
 
 
 ================================================================================
+ФАЙЛ: C:\Users\Karimi\GolandProjects\AB_system\.gitignore
+================================================================================
+.env
+.logs/
+*.log
+.idea/
+
+================================================================================
 ФАЙЛ: C:\Users\Karimi\GolandProjects\AB_system\go.mod
 ================================================================================
 module AB_system
@@ -236,6 +244,7 @@ func run() error {
 package app
 
 import (
+	"AB_system/internal/http/middlewares"
 	"context"
 	"errors"
 	"log/slog"
@@ -281,13 +290,18 @@ func New(ctx context.Context, cfg configs.Config) (*App, error) {
 	userSvc := service.NewUserService(userRepo, roleRepo)
 	ExperimentRepo := pgrepo.NewExperimentRepository(db)
 	ExperimentSvc := service.NewExperimentService(ExperimentRepo, flagRepo)
+	approvalRepo := pgrepo.NewExperimentApprovalRepository(db)
+	approvalSvc := service.NewApprovalService(ExperimentRepo, approvalRepo)
 
 	engine := router.New(router.Deps{
 		Health: handler.NewHealthHandler(sqlDB),
+		Auth:   middlewares.Authenticate(userRepo),
 		Handlers: []router.Registrar{
 			handler.NewFeatureFlagHandler(flagSvc),
 			handler.NewUsersHandler(userSvc),
-			handler.NewExperimentHandler(ExperimentSvc)},
+			handler.NewExperimentHandler(ExperimentSvc),
+			handler.NewApprovalHandler(approvalSvc, ExperimentSvc),
+		},
 	},
 	)
 
@@ -703,6 +717,21 @@ completed → archived
 
 
 ================================================================================
+ФАЙЛ: C:\Users\Karimi\GolandProjects\AB_system\internal\domain\models\actor.go
+================================================================================
+package models
+
+import "github.com/google/uuid"
+
+type Actor struct {
+	ID   uuid.UUID
+	Role string
+}
+
+func (a Actor) IsAdmin() bool { return a.Role == RoleAdmin }
+
+
+================================================================================
 ФАЙЛ: C:\Users\Karimi\GolandProjects\AB_system\internal\domain\models\experiments.go
 ================================================================================
 package models
@@ -883,6 +912,7 @@ package repository
 import (
 	"AB_system/internal/domain/models"
 	"context"
+
 	"github.com/google/uuid"
 )
 
@@ -890,32 +920,30 @@ type ApprovalRepository interface {
 	ApprovalReader
 	ApprovalWriter
 }
+
 type ApprovalWriter interface {
-	ApproveExperiment(
+	RecordDecision(
 		ctx context.Context,
 		experimentID uuid.UUID,
 		approverID uuid.UUID,
-	) error
-
-	RequestExperimentChanges(
-		ctx context.Context,
-		experimentID uuid.UUID,
-		approverID uuid.UUID,
-		comment string,
-	) error
-
-	RejectExperiment(
-		ctx context.Context,
-		experimentID uuid.UUID,
-		approverID uuid.UUID,
+		version int,
+		status models.ApprovalStatus,
 		comment string,
 	) error
 }
+
 type ApprovalReader interface {
 	GetApprovalsByExperimentID(
 		ctx context.Context,
 		experimentID uuid.UUID,
 	) ([]models.ExperimentApproval, error)
+
+	CountApproved(
+		ctx context.Context,
+		experimentID uuid.UUID,
+		version int,
+		approverIDs []uuid.UUID,
+	) (int, error)
 }
 
 
@@ -961,15 +989,10 @@ type ExperimentWriter interface {
 }
 
 type ExperimentLifecycle interface {
-	TransitionExperiment(
+	TransitionStatus(
 		ctx context.Context,
 		experimentID uuid.UUID,
-		status models.ExperimentStatus,
-	) error
-
-	CompleteExperiment(
-		ctx context.Context,
-		experimentID uuid.UUID,
+		from, to models.ExperimentStatus,
 	) error
 }
 
@@ -1090,16 +1113,10 @@ type UserWriter interface {
 		user *models.User,
 	) error
 }
-type UserDeleter interface {
-	DeleteUser(
-		ctx context.Context,
-		ID uuid.UUID,
-	) error
-}
+
 type UserRepository interface {
 	UserReader
 	UserWriter
-	UserDeleter
 }
 
 
@@ -1113,7 +1130,6 @@ import (
 	"AB_system/internal/domain/repository"
 	"AB_system/internal/domain/service/input"
 	"AB_system/internal/domain/service/validation"
-	"AB_system/internal/http/dto"
 	"AB_system/pkg/errs"
 	"context"
 	"encoding/json"
@@ -1139,17 +1155,10 @@ func (s *ExperimentService) CreateExperiment(
 		if errors.Is(err, errs.ErrRecordNotFound) {
 			return nil, errs.ErrFeatureFlagNotFound
 		}
+		return nil, err
 	}
 
-	variants := make([]models.ExperimentVariant, 0, len(in.Variants))
-	for _, v := range in.Variants {
-		variants = append(variants, models.ExperimentVariant{
-			Name:      v.Name,
-			Value:     v.Value,
-			Weight:    v.WeightBP,
-			IsControl: v.IsControl,
-		})
-	}
+	variants := input.ToVariantModels(in.Variants)
 
 	if err := validation.ValidateConfig(in.Name, in.AudienceBP, variants); err != nil {
 		return nil, err
@@ -1169,7 +1178,7 @@ func (s *ExperimentService) CreateExperiment(
 	})
 }
 func (s *ExperimentService) UpdateExperiment(
-	ctx context.Context, id, actorID uuid.UUID, in input.UpdateExperimentInput,
+	ctx context.Context, id uuid.UUID, actor models.Actor, in input.UpdateExperimentInput,
 ) error {
 	cur, err := s.experimentRepo.GetExperimentByID(ctx, id)
 	if err != nil {
@@ -1178,19 +1187,22 @@ func (s *ExperimentService) UpdateExperiment(
 		}
 		return err
 	}
+	if cur.OwnerID != actor.ID && actor.Role != models.RoleAdmin {
+		return errs.ErrPermissionDenied
+	}
 	if cur.Status != models.ExperimentStatusDraft {
 		return errs.ErrExperimentNotEditable
-	}
-	if cur.OwnerID != actorID { // позже: или роль admin
-		return errs.ErrPermissionDenied
 	}
 
 	flag, err := s.flagRepo.GetFeatureFlagByID(ctx, cur.FeatureFlagID)
 	if err != nil {
+		if errors.Is(err, errs.ErrRecordNotFound) {
+			return errs.ErrFeatureFlagNotFound
+		}
 		return err
 	}
 
-	variants := dto.ToVariantModels(in.Variants)
+	variants := input.ToVariantModels(in.Variants)
 	if err := validation.ValidateConfig(in.Name, in.AudienceBP, variants); err != nil {
 		return err
 	}
@@ -1218,6 +1230,255 @@ func (s *ExperimentService) GetExperimentByID(ctx context.Context, id uuid.UUID)
 func (s *ExperimentService) GetExperiments(ctx context.Context) ([]models.Experiment, error) {
 	return s.experimentRepo.GetAllExperiments(ctx)
 
+}
+
+
+================================================================================
+ФАЙЛ: C:\Users\Karimi\GolandProjects\AB_system\internal\domain\service\experiment_approval.go
+================================================================================
+package service
+
+import (
+	"AB_system/internal/domain/models"
+	"AB_system/internal/domain/repository"
+	"AB_system/pkg/errs"
+	"context"
+	"errors"
+
+	"github.com/google/uuid"
+)
+
+// Пока групп согласующих нет: достаточно одного одобрения (fallback из ТЗ).
+const defaultMinApprovals = 1
+
+type ApprovalService struct {
+	experimentRepo repository.ExperimentRepository
+	approvalRepo   repository.ApprovalRepository
+}
+
+func NewApprovalService(
+	experimentRepo repository.ExperimentRepository,
+	approvalRepo repository.ApprovalRepository,
+) *ApprovalService {
+	return &ApprovalService{experimentRepo: experimentRepo, approvalRepo: approvalRepo}
+}
+
+// decide — общая часть всех трёх решений: проверки и запись решения.
+func (s *ApprovalService) decide(
+	ctx context.Context,
+	experimentID uuid.UUID,
+	actor models.Actor,
+	status models.ApprovalStatus,
+	comment string,
+) (models.Experiment, error) {
+	e, err := s.experimentRepo.GetExperimentByID(ctx, experimentID)
+	if err != nil {
+		if errors.Is(err, errs.ErrRecordNotFound) {
+			return models.Experiment{}, errs.ErrExperimentNotFound
+		}
+		return models.Experiment{}, err
+	}
+	if e.Status != models.ExperimentStatusReview {
+		return models.Experiment{}, errs.ErrInvalidTransition
+	}
+	if e.OwnerID == actor.ID {
+		return models.Experiment{}, errs.ErrPermissionDenied // нельзя согласовывать своё
+	}
+	if err := s.approvalRepo.RecordDecision(
+		ctx, e.ID, actor.ID, e.Version, status, comment,
+	); err != nil {
+		return models.Experiment{}, err
+	}
+	return e, nil
+}
+
+// Approve — одобрение. Когда одобрений набралось достаточно,
+// эксперимент переходит review -> approved.
+func (s *ApprovalService) Approve(
+	ctx context.Context,
+	experimentID uuid.UUID,
+	actor models.Actor,
+	comment string,
+) error {
+
+	e, err := s.decide(ctx, experimentID, actor, models.ApprovalApproved, comment)
+	if err != nil {
+		return err
+	}
+
+	n, err := s.approvalRepo.CountApproved(ctx, e.ID, e.Version, nil)
+	if err != nil {
+		return err
+	}
+	if n < defaultMinApprovals {
+		return nil
+	}
+
+	err = s.experimentRepo.TransitionStatus(
+		ctx, e.ID, models.ExperimentStatusReview, models.ExperimentStatusApproved,
+	)
+	if err != nil && !errors.Is(err, errs.ErrInvalidTransition) {
+		return err
+	}
+	return nil
+}
+
+// Reject — отклонение. Эксперимент сразу переходит review -> rejected.
+func (s *ApprovalService) Reject(
+	ctx context.Context,
+	experimentID uuid.UUID,
+	actor models.Actor,
+	comment string,
+) error {
+	if comment == "" {
+		return errs.ErrCommentRequired
+	}
+	e, err := s.decide(ctx, experimentID, actor, models.ApprovalRejected, comment)
+	if err != nil {
+		return err
+	}
+	return s.moveFromReview(ctx, e.ID, models.ExperimentStatusRejected)
+}
+
+// RequestChanges — запрос правок. Эксперимент возвращается review -> draft.
+func (s *ApprovalService) RequestChanges(
+	ctx context.Context,
+	experimentID uuid.UUID,
+	actor models.Actor,
+	comment string,
+) error {
+	if comment == "" {
+		return errs.ErrCommentRequired
+	}
+	e, err := s.decide(ctx, experimentID, actor, models.ApprovalChangesNeeded, comment)
+	if err != nil {
+		return err
+	}
+	return s.moveFromReview(ctx, e.ID, models.ExperimentStatusDraft)
+}
+
+// moveFromReview меняет статус из review. Если другой согласующий уже успел
+// сменить статус (гонка), это не считаем ошибкой.
+func (s *ApprovalService) moveFromReview(
+	ctx context.Context,
+	experimentID uuid.UUID,
+	to models.ExperimentStatus,
+) error {
+	err := s.experimentRepo.TransitionStatus(
+		ctx, experimentID, models.ExperimentStatusReview, to,
+	)
+	if err != nil && !errors.Is(err, errs.ErrInvalidTransition) {
+		return err
+	}
+	return nil
+}
+func (s *ApprovalService) List(
+	ctx context.Context, experimentID uuid.UUID,
+) ([]models.ExperimentApproval, error) {
+	exists, err := s.experimentRepo.ExperimentExists(ctx, experimentID)
+	if err != nil {
+		return nil, err
+	}
+	if !exists {
+		return nil, errs.ErrExperimentNotFound
+	}
+	return s.approvalRepo.GetApprovalsByExperimentID(ctx, experimentID)
+}
+
+
+================================================================================
+ФАЙЛ: C:\Users\Karimi\GolandProjects\AB_system\internal\domain\service\experiment_lifecycle.go
+================================================================================
+package service
+
+import (
+	"AB_system/internal/domain/models"
+	"AB_system/internal/domain/service/validation"
+	"AB_system/pkg/errs"
+	"context"
+	"errors"
+
+	"github.com/google/uuid"
+)
+
+type Action string
+
+const (
+	ActionSubmit  Action = "submit"
+	ActionRework  Action = "rework"
+	ActionStart   Action = "start"
+	ActionPause   Action = "pause"
+	ActionResume  Action = "resume"
+	ActionArchive Action = "archive"
+)
+
+type transitionRule struct {
+	from, to models.ExperimentStatus
+}
+
+// Единственное место, где описаны допустимые переходы.
+var transitionRules = map[Action]transitionRule{
+	ActionSubmit:  {from: models.ExperimentStatusDraft, to: models.ExperimentStatusReview},
+	ActionRework:  {from: models.ExperimentStatusRejected, to: models.ExperimentStatusDraft},
+	ActionStart:   {from: models.ExperimentStatusApproved, to: models.ExperimentStatusRunning},
+	ActionPause:   {from: models.ExperimentStatusRunning, to: models.ExperimentStatusPaused},
+	ActionResume:  {from: models.ExperimentStatusPaused, to: models.ExperimentStatusRunning},
+	ActionArchive: {from: models.ExperimentStatusCompleted, to: models.ExperimentStatusArchived},
+}
+
+func (s *ExperimentService) Transition(
+	ctx context.Context, id uuid.UUID, actor models.Actor, action Action,
+) (models.Experiment, error) {
+	rule, ok := transitionRules[action]
+	if !ok {
+		return models.Experiment{}, errs.ErrInvalidTransition
+	}
+
+	e, err := s.experimentRepo.GetExperimentByID(ctx, id)
+	if err != nil {
+		if errors.Is(err, errs.ErrRecordNotFound) {
+			return models.Experiment{}, errs.ErrExperimentNotFound
+		}
+		return models.Experiment{}, err
+	}
+	if e.OwnerID != actor.ID && !actor.IsAdmin() {
+		return models.Experiment{}, errs.ErrPermissionDenied
+	}
+	if e.Status != rule.from {
+		return models.Experiment{}, errs.ErrInvalidTransition
+	}
+
+	// на ревью уходит только корректная конфигурация
+	if action == ActionSubmit {
+		if err := s.validateForReview(ctx, e); err != nil {
+			return models.Experiment{}, err
+		}
+	}
+
+	if err := s.experimentRepo.TransitionStatus(ctx, e.ID, rule.from, rule.to); err != nil {
+		// сработал частичный уникальный индекс: на флаге уже есть активный эксперимент
+		if action == ActionStart && errors.Is(err, errs.ErrDuplicateEntry) {
+			return models.Experiment{}, errs.ErrActiveExperimentExists
+		}
+		return models.Experiment{}, err
+	}
+
+	e.Status = rule.to
+	return e, nil
+}
+
+func (s *ExperimentService) validateForReview(ctx context.Context, e models.Experiment) error {
+	flag, err := s.flagRepo.GetFeatureFlagByID(ctx, e.FeatureFlagID)
+	if err != nil {
+		if errors.Is(err, errs.ErrRecordNotFound) {
+			return errs.ErrFeatureFlagNotFound
+		}
+		return err
+	}
+	if err := validation.ValidateConfig(e.Name, e.AudienceBP, e.Variants); err != nil {
+		return err
+	}
+	return validation.ValidateVariantValues(flag.ValueType, e.Variants)
 }
 
 
@@ -1458,7 +1719,13 @@ func (s *UserService) DeleteUser(ctx context.Context, userID uuid.UUID) error {
 	if !exists {
 		return errs.ErrUserNotFound
 	}
-	return s.userRepo.DeleteUser(ctx, userID)
+	if err := s.userRepo.UpdateUser(ctx, &models.User{
+		ID:       userID,
+		IsActive: false,
+	}); err != nil {
+		return err
+	}
+	return nil
 }
 func (s *UserService) GetUserByID(ctx context.Context, userID uuid.UUID) (models.User, error) {
 	if userID == uuid.Nil {
@@ -1476,7 +1743,10 @@ func (s *UserService) GetAllUsers(ctx context.Context) ([]models.User, error) {
 ================================================================================
 package input
 
-import "github.com/google/uuid"
+import (
+	"AB_system/internal/domain/models"
+	"github.com/google/uuid"
+)
 
 // internal/domain/service/experiment_input.go
 type VariantInput struct {
@@ -1496,6 +1766,16 @@ type UpdateExperimentInput struct {
 	Name       string
 	AudienceBP int
 	Variants   []VariantInput
+}
+
+func ToVariantModels(in []VariantInput) []models.ExperimentVariant {
+	res := make([]models.ExperimentVariant, 0, len(in))
+	for _, v := range in {
+		res = append(res, models.ExperimentVariant{
+			Name: v.Name, Value: v.Value, Weight: v.WeightBP, IsControl: v.IsControl,
+		})
+	}
+	return res
 }
 
 
@@ -1557,6 +1837,81 @@ func ValidateConfig(name string, audienceBP int, variants []models.ExperimentVar
 
 
 ================================================================================
+ФАЙЛ: C:\Users\Karimi\GolandProjects\AB_system\internal\domain\service\validation\validation_test.go
+================================================================================
+package validation
+
+import (
+	"AB_system/internal/domain/models"
+	"AB_system/pkg/errs"
+	"errors"
+	"testing"
+)
+
+func variants(ws ...int) []models.ExperimentVariant {
+	res := make([]models.ExperimentVariant, 0, len(ws))
+	for i, w := range ws {
+		res = append(res, models.ExperimentVariant{
+			Name: string(rune('a' + i)), Value: "v", Weight: w, IsControl: i == 0,
+		})
+	}
+	return res
+}
+
+func TestValidateConfig(t *testing.T) {
+	noControl := variants(5000, 5000)
+	noControl[0].IsControl = false
+	twoControls := variants(5000, 5000)
+	twoControls[1].IsControl = true
+	dup := variants(5000, 5000)
+	dup[1].Name = dup[0].Name
+
+	tests := []struct {
+		name     string
+		expName  string
+		audience int
+		vs       []models.ExperimentVariant
+		want     error
+	}{
+		{"ok", "exp", 10000, variants(5000, 5000), nil},
+		{"ok partial audience", "exp", 2000, variants(1000, 1000), nil},
+		{"empty name", "", 10000, variants(10000), errs.ErrExperimentNameIsEmpty},
+		{"audience zero", "exp", 0, variants(10000), errs.ErrInvalidField},
+		{"audience over 100%", "exp", 10001, variants(10001), errs.ErrInvalidField},
+		{"no variants", "exp", 100, nil, errs.ErrExperimentVariantsEmpty},
+		{"sum mismatch", "exp", 10000, variants(5000, 4000), errs.ErrWeightsSumMismatch},
+		{"no control", "exp", 10000, noControl, errs.ErrControlVariantCount},
+		{"two controls", "exp", 10000, twoControls, errs.ErrControlVariantCount},
+		{"duplicate names", "exp", 10000, dup, errs.ErrInvalidField},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := ValidateConfig(tt.expName, tt.audience, tt.vs)
+			if !errors.Is(got, tt.want) {
+				t.Fatalf("got %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestValidateValue(t *testing.T) {
+	tests := []struct {
+		typ, val string
+		ok       bool
+	}{
+		{"bool", "true", true}, {"bool", "yes", false},
+		{"number", "1.5", true}, {"number", "abc", false},
+		{"string", "x", true}, {"json", "x", false},
+	}
+	for _, tt := range tests {
+		if err := ValidateValue(tt.typ, tt.val); (err == nil) != tt.ok {
+			t.Errorf("%s/%s: err=%v, ok=%v", tt.typ, tt.val, err, tt.ok)
+		}
+	}
+}
+
+
+================================================================================
 ФАЙЛ: C:\Users\Karimi\GolandProjects\AB_system\internal\domain\service\validation\variantValue.go
 ================================================================================
 package validation
@@ -1592,6 +1947,43 @@ func ValidateValue(valueType, value string) error {
 		return errs.ErrInvalidField
 	}
 	return nil
+}
+
+
+================================================================================
+ФАЙЛ: C:\Users\Karimi\GolandProjects\AB_system\internal\http\dto\approval.go
+================================================================================
+package dto
+
+import (
+	"AB_system/internal/domain/models"
+	"time"
+
+	"github.com/google/uuid"
+)
+
+type DecisionRequest struct {
+	Comment string `json:"comment" binding:"max=2000"`
+}
+
+type ApprovalResponse struct {
+	ID         uuid.UUID  `json:"id"`
+	ApproverID uuid.UUID  `json:"approver_id"`
+	Version    int        `json:"version"`
+	Status     string     `json:"status"`
+	Comment    string     `json:"comment"`
+	DecidedAt  *time.Time `json:"decided_at,omitempty"`
+}
+
+func NewApprovalResponse(a models.ExperimentApproval) ApprovalResponse {
+	return ApprovalResponse{
+		ID:         a.ID,
+		ApproverID: a.ApproverID,
+		Version:    a.Version,
+		Status:     string(a.Status),
+		Comment:    a.Comment,
+		DecidedAt:  a.DecidedAt,
+	}
 }
 
 
@@ -1660,6 +2052,7 @@ func NewExperimentResponse(e *models.Experiment) ExperimentResponse {
 		ID: e.ID, FeatureFlagID: e.FeatureFlagID, Name: e.Name,
 		Status: string(e.Status), AudienceBP: e.AudienceBP, Version: e.Version,
 		OwnerID: e.OwnerID, CreatedAt: e.CreatedAt,
+		Variants: make([]VariantResponse, 0, len(e.Variants)),
 	}
 	for _, v := range e.Variants {
 		res.Variants = append(res.Variants, VariantResponse{
@@ -1749,19 +2142,19 @@ import (
 )
 
 type UserRequest struct {
-	Email    string    `json:"email" binding:"required"`
-	Name     string    `json:"name" binding:"required"`
+	Email    string    `json:"email" binding:"required,email"`
+	Name     string    `json:"name" binding:"required,max=255"`
 	RoleID   uuid.UUID `json:"role_id" binding:"required"`
-	IsActive bool      `json:"is_active" default:"true"`
+	IsActive *bool     `json:"is_active"` // по умолчанию true
 }
 type UserResponse struct {
-	ID        uuid.UUID `json:"id" gorm:"type:uuid;index"`
-	Email     string    `json:"email" gorm:"unique;index"`
-	Name      string    `json:"name" gorm:"unique;index"`
-	RoleID    uuid.UUID `json:"role_id" gorm:"index"`
-	IsActive  bool      `json:"is_active" gorm:"default:true"`
-	CreatedAt time.Time `json:"created_at" gorm:"autoCreateTime"`
-	UpdatedAt time.Time `json:"updated_at" gorm:"autoUpdateTime"`
+	ID        uuid.UUID `json:"id"`
+	Email     string    `json:"email"`
+	Name      string    `json:"name"`
+	RoleID    uuid.UUID `json:"role_id"`
+	IsActive  bool      `json:"is_active"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 }
 
 func NewUserResponse(u *models.User) UserResponse {
@@ -1784,11 +2177,109 @@ type UpdateUserRequest struct {
 
 
 ================================================================================
+ФАЙЛ: C:\Users\Karimi\GolandProjects\AB_system\internal\http\handlers\approval.go
+================================================================================
+package handler
+
+import (
+	"AB_system/internal/domain/models"
+	"AB_system/internal/domain/service"
+	"AB_system/internal/http/dto"
+	"AB_system/internal/http/middlewares"
+	"context"
+	"errors"
+	"io"
+	"net/http"
+
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
+)
+
+type ApprovalHandler struct {
+	approvals   *service.ApprovalService
+	experiments *service.ExperimentService
+}
+
+func NewApprovalHandler(
+	approvals *service.ApprovalService,
+	experiments *service.ExperimentService,
+) *ApprovalHandler {
+	return &ApprovalHandler{approvals: approvals, experiments: experiments}
+}
+
+func (h *ApprovalHandler) Register(r *gin.RouterGroup) {
+	g := r.Group("/experiments")
+	reviewer := middlewares.RequireRole(models.RoleAdmin, models.RoleApprover)
+
+	g.POST("/:id/approve", reviewer, h.decide(h.approvals.Approve))
+	g.POST("/:id/reject", reviewer, h.decide(h.approvals.Reject))
+	g.POST("/:id/request-changes", reviewer, h.decide(h.approvals.RequestChanges))
+	g.GET("/:id/approvals", h.List)
+}
+
+type decisionFunc func(ctx context.Context, id uuid.UUID, actor models.Actor, comment string) error
+
+// decide превращает метод сервиса в gin-хендлер; три эндпоинта отличаются только им.
+func (h *ApprovalHandler) decide(fn decisionFunc) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		id, ok := parseUUID(c, "id")
+		if !ok {
+			return
+		}
+		actor, ok := currentActor(c)
+		if !ok {
+			return
+		}
+
+		var req dto.DecisionRequest
+		// тело необязательно (у approve комментария может не быть)
+		if err := c.ShouldBindJSON(&req); err != nil && !errors.Is(err, io.EOF) {
+			writeBadRequest(c, err)
+			return
+		}
+
+		ctx := c.Request.Context()
+		if err := fn(ctx, id, actor, req.Comment); err != nil {
+			writeError(c, err)
+			return
+		}
+
+		// отдаём актуальное состояние: статус мог смениться из-за гонки
+		e, err := h.experiments.GetExperimentByID(ctx, id)
+		if err != nil {
+			writeError(c, err)
+			return
+		}
+		c.JSON(http.StatusOK, dto.NewExperimentResponse(&e))
+	}
+}
+
+func (h *ApprovalHandler) List(c *gin.Context) {
+	id, ok := parseUUID(c, "id")
+	if !ok {
+		return
+	}
+	list, err := h.approvals.List(c.Request.Context(), id)
+	if err != nil {
+		writeError(c, err)
+		return
+	}
+	res := make([]dto.ApprovalResponse, 0, len(list))
+	for _, a := range list {
+		res = append(res, dto.NewApprovalResponse(a))
+	}
+	c.JSON(http.StatusOK, res)
+}
+
+
+================================================================================
 ФАЙЛ: C:\Users\Karimi\GolandProjects\AB_system\internal\http\handlers\common.go
 ================================================================================
 package handler
 
 import (
+	"AB_system/internal/domain/models"
+	"AB_system/internal/http/middlewares"
 	"AB_system/internal/http/observability"
 	"AB_system/pkg/errs"
 	"errors"
@@ -1834,6 +2325,7 @@ func mapError(err error) (int, string) {
 		errors.Is(err, errs.ErrEmailUniquenessFailed),
 		errors.Is(err, errs.ErrConflict),
 		errors.Is(err, errs.ErrExperimentNotEditable),
+		errors.Is(err, errs.ErrActiveExperimentExists),
 		errors.Is(err, errs.ErrInvalidTransition):
 		return http.StatusConflict, err.Error()
 
@@ -1851,6 +2343,7 @@ func mapError(err error) (int, string) {
 		errors.Is(err, errs.ErrExperimentNameIsEmpty),
 		errors.Is(err, errs.ErrExperimentVariantsEmpty),
 		errors.Is(err, errs.ErrWeightsSumMismatch),
+		errors.Is(err, errs.ErrCommentRequired),
 		errors.Is(err, errs.ErrControlVariantCount):
 		return http.StatusBadRequest, err.Error()
 
@@ -1867,16 +2360,17 @@ func parseUUID(c *gin.Context, param string) (uuid.UUID, bool) {
 	}
 	return id, true
 }
-func currentUserID(c *gin.Context) (uuid.UUID, bool) {
-	id, err := uuid.Parse(c.GetHeader("X-User-Id"))
-	if err != nil {
+
+func currentActor(c *gin.Context) (models.Actor, bool) {
+	a, ok := middlewares.ActorFrom(c)
+	if !ok {
 		c.JSON(http.StatusUnauthorized, gin.H{
-			"error":    "нужен заголовок X-User-Id с UUID пользователя",
+			"error":    "требуется аутентификация",
 			"trace_id": observability.GetTraceID(c.Request.Context()),
 		})
-		return uuid.Nil, false
+		return models.Actor{}, false
 	}
-	return id, true
+	return a, true
 }
 
 
@@ -1886,8 +2380,10 @@ func currentUserID(c *gin.Context) (uuid.UUID, bool) {
 package handler
 
 import (
+	"AB_system/internal/domain/models"
 	"AB_system/internal/domain/service"
 	"AB_system/internal/http/dto"
+	"AB_system/internal/http/middlewares"
 	"github.com/gin-gonic/gin"
 	"net/http"
 )
@@ -1897,14 +2393,44 @@ type ExperimentHandler struct {
 }
 
 func NewExperimentHandler(svc *service.ExperimentService) *ExperimentHandler {
+
 	return &ExperimentHandler{svc: svc}
 }
+
 func (h *ExperimentHandler) Register(r *gin.RouterGroup) {
+	write := middlewares.RequireRole(models.RoleAdmin, models.RoleExperimenter)
 	g := r.Group("/experiments")
-	g.POST("", h.Create)
+
+	g.POST("", write, h.Create)
 	g.GET("", h.List)
 	g.GET("/:id", h.Get)
-	g.PUT("/:id", h.Update)
+	g.PUT("/:id", write, h.Update)
+
+	g.POST("/:id/submit", write, h.transition(service.ActionSubmit))
+	g.POST("/:id/rework", write, h.transition(service.ActionRework))
+	g.POST("/:id/start", write, h.transition(service.ActionStart))
+	g.POST("/:id/pause", write, h.transition(service.ActionPause))
+	g.POST("/:id/resume", write, h.transition(service.ActionResume))
+	g.POST("/:id/archive", write, h.transition(service.ActionArchive))
+}
+
+func (h *ExperimentHandler) transition(action service.Action) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		id, ok := parseUUID(c, "id")
+		if !ok {
+			return
+		}
+		actor, ok := currentActor(c)
+		if !ok {
+			return
+		}
+		e, err := h.svc.Transition(c.Request.Context(), id, actor, action)
+		if err != nil {
+			writeError(c, err)
+			return
+		}
+		c.JSON(http.StatusOK, dto.NewExperimentResponse(&e))
+	}
 }
 func (h *ExperimentHandler) Create(c *gin.Context) {
 	var req dto.CreateExperimentRequest
@@ -1912,11 +2438,11 @@ func (h *ExperimentHandler) Create(c *gin.Context) {
 		writeBadRequest(c, err)
 		return
 	}
-	ownerID, ok := currentUserID(c)
+	actor, ok := currentActor(c)
 	if !ok {
 		return
 	}
-	e, err := h.svc.CreateExperiment(c.Request.Context(), ownerID, req.ToInput())
+	e, err := h.svc.CreateExperiment(c.Request.Context(), actor.ID, req.ToInput())
 	if err != nil {
 		writeError(c, err)
 		return
@@ -1954,7 +2480,7 @@ func (h *ExperimentHandler) Update(c *gin.Context) {
 	if !ok {
 		return
 	}
-	actorID, ok := currentUserID(c)
+	actor, ok := currentActor(c)
 	if !ok {
 		return
 	}
@@ -1965,7 +2491,7 @@ func (h *ExperimentHandler) Update(c *gin.Context) {
 	}
 
 	ctx := c.Request.Context()
-	if err := h.svc.UpdateExperiment(ctx, id, actorID, req.ToInput()); err != nil {
+	if err := h.svc.UpdateExperiment(ctx, id, actor, req.ToInput()); err != nil {
 		writeError(c, err)
 		return
 	}
@@ -1987,6 +2513,7 @@ import (
 	"AB_system/internal/domain/models"
 	"AB_system/internal/domain/service"
 	"AB_system/internal/http/dto"
+	"AB_system/internal/http/middlewares"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -2002,10 +2529,11 @@ func NewFeatureFlagHandler(svc *service.FeatureFlagService) *FeatureFlagHandler 
 
 func (h *FeatureFlagHandler) Register(r *gin.RouterGroup) {
 	g := r.Group("/feature-flags")
-	g.POST("", h.Create)
+	write := middlewares.RequireRole(models.RoleAdmin, models.RoleExperimenter)
+	g.POST("", write, h.Create)
 	g.GET("", h.List)
 	g.GET("/:id", h.Get)
-	g.PATCH("/:id/default", h.UpdateDefault)
+	g.PATCH("/:id/default", write, h.UpdateDefault)
 }
 
 func (h *FeatureFlagHandler) Create(c *gin.Context) {
@@ -2128,6 +2656,7 @@ import (
 	"AB_system/internal/domain/service"
 	service2 "AB_system/internal/domain/service/input"
 	"AB_system/internal/http/dto"
+	"AB_system/internal/http/middlewares"
 	"github.com/gin-gonic/gin"
 	"net/http"
 )
@@ -2140,13 +2669,13 @@ func NewUsersHandler(svc *service.UserService) *UsersHandler {
 	return &UsersHandler{svc: svc}
 }
 func (h *UsersHandler) Register(r *gin.RouterGroup) {
-	//В Register стоят PUT и DELETE. Мы решили PATCH и без удаления (деактивация через is_active).
 	g := r.Group("/users")
-	g.POST("", h.Create)
-	g.GET("", h.List)
-	g.GET("/:id", h.Get)
-	g.PUT("/:id", h.Update)
-	g.DELETE("/:id", h.Delete)
+	admin := middlewares.RequireRole(models.RoleAdmin)
+	g.POST("", admin, h.Create)
+	g.GET("", admin, h.List)
+	g.GET("/:id", admin, h.Get)
+	g.PATCH("/:id", admin, h.Update)
+	g.PATCH("/:id/delete", admin, h.Delete)
 }
 func (h *UsersHandler) Create(c *gin.Context) {
 	var req dto.UserRequest
@@ -2154,11 +2683,15 @@ func (h *UsersHandler) Create(c *gin.Context) {
 		writeBadRequest(c, err)
 		return
 	}
-	user, err := h.svc.CreateUser(c, models.User{
+	isActive := true
+	if req.IsActive != nil {
+		isActive = *req.IsActive
+	}
+	user, err := h.svc.CreateUser(c.Request.Context(), models.User{
 		Email:    req.Email,
 		Name:     req.Name,
 		RoleID:   req.RoleID,
-		IsActive: req.IsActive,
+		IsActive: isActive,
 	})
 	if err != nil {
 		writeError(c, err)
@@ -2201,9 +2734,7 @@ func (h *UsersHandler) Delete(c *gin.Context) {
 		writeError(c, err)
 		return
 	}
-	c.JSON(http.StatusNoContent, gin.H{
-		"status": "deleted",
-	})
+	c.Status(http.StatusNoContent)
 }
 func (h *UsersHandler) Update(c *gin.Context) {
 	ID, ok := parseUUID(c, "id")
@@ -2225,6 +2756,99 @@ func (h *UsersHandler) Update(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, dto.NewUserResponse(user))
+}
+
+
+================================================================================
+ФАЙЛ: C:\Users\Karimi\GolandProjects\AB_system\internal\http\middlewares\auth.go
+================================================================================
+package middlewares
+
+import (
+	"AB_system/internal/domain/models"
+	"AB_system/internal/http/observability"
+	"AB_system/pkg/errs"
+	"context"
+	"errors"
+	"log/slog"
+	"net/http"
+
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
+)
+
+const (
+	UserHeader = "X-User-Id"
+	actorKey   = "actor"
+)
+
+// UserFinder: репозиторий пользователей подходит под него без обёрток.
+type UserFinder interface {
+	GetUserByID(ctx context.Context, id uuid.UUID) (models.User, error)
+}
+
+func Authenticate(users UserFinder) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		id, err := uuid.Parse(c.GetHeader(UserHeader))
+		if err != nil {
+			deny(c, http.StatusUnauthorized, "нужен заголовок X-User-Id с UUID пользователя")
+			return
+		}
+
+		u, err := users.GetUserByID(c.Request.Context(), id)
+		if err != nil {
+			if errors.Is(err, errs.ErrRecordNotFound) {
+				deny(c, http.StatusUnauthorized, "пользователь не найден")
+				return
+			}
+			slog.ErrorContext(c.Request.Context(), "auth: load user failed", "err", err)
+			deny(c, http.StatusInternalServerError, "внутренняя ошибка сервера")
+			return
+		}
+		if !u.IsActive {
+			deny(c, http.StatusForbidden, "пользователь деактивирован")
+			return
+		}
+
+		c.Set(actorKey, models.Actor{ID: u.ID, Role: u.Role.RoleName})
+		c.Next()
+	}
+}
+
+// RequireRole пропускает только перечисленные роли.
+func RequireRole(roles ...string) gin.HandlerFunc {
+	allowed := make(map[string]bool, len(roles))
+	for _, r := range roles {
+		allowed[r] = true
+	}
+	return func(c *gin.Context) {
+		a, ok := ActorFrom(c)
+		if !ok {
+			deny(c, http.StatusUnauthorized, "требуется аутентификация")
+			return
+		}
+		if !allowed[a.Role] {
+			deny(c, http.StatusForbidden, errs.ErrPermissionDenied.Error())
+			return
+		}
+		c.Next()
+	}
+}
+
+func ActorFrom(c *gin.Context) (models.Actor, bool) {
+	v, ok := c.Get(actorKey)
+	if !ok {
+		return models.Actor{}, false
+	}
+	a, ok := v.(models.Actor)
+	return a, ok
+}
+
+func deny(c *gin.Context, status int, msg string) {
+	c.AbortWithStatusJSON(status, gin.H{
+		"error":    msg,
+		"trace_id": observability.GetTraceID(c.Request.Context()),
+	})
 }
 
 
@@ -2312,6 +2936,7 @@ type Registrar interface {
 
 type Deps struct {
 	Health   *handler.HealthHandler
+	Auth     gin.HandlerFunc
 	Handlers []Registrar
 }
 
@@ -2323,6 +2948,7 @@ func New(d Deps) *gin.Engine {
 	r.GET("/ready", d.Health.Ready)
 
 	api := r.Group("/api/v1")
+	api.Use(d.Auth)
 
 	for _, h := range d.Handlers {
 		h.Register(api)
@@ -2424,6 +3050,7 @@ import (
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type ExperimentApprovalRepository struct {
@@ -2431,9 +3058,46 @@ type ExperimentApprovalRepository struct {
 }
 
 func NewExperimentApprovalRepository(db *gorm.DB) *ExperimentApprovalRepository {
-	return &ExperimentApprovalRepository{
-		db: db,
+	return &ExperimentApprovalRepository{db: db}
+}
+
+// RecordDecision сохраняет решение согласующего по конкретной версии эксперимента.
+// Если этот человек уже решал по этой версии, решение перезаписывается.
+func (r *ExperimentApprovalRepository) RecordDecision(
+	ctx context.Context,
+	experimentID uuid.UUID,
+	approverID uuid.UUID,
+	version int,
+	status models.ApprovalStatus,
+	comment string,
+) error {
+	const op = "RecordDecision"
+	now := time.Now()
+
+	approval := models.ExperimentApproval{
+		ExperimentID: experimentID,
+		ApproverID:   approverID,
+		Version:      version,
+		Status:       status,
+		Comment:      comment,
+		DecidedAt:    &now,
 	}
+
+	err := r.db.WithContext(ctx).
+		Omit(clause.Associations).
+		Clauses(clause.OnConflict{
+			Columns: []clause.Column{
+				{Name: "experiment_id"},
+				{Name: "approver_id"},
+				{Name: "version"},
+			},
+			DoUpdates: clause.AssignmentColumns([]string{
+				"status", "comment", "decided_at", "updated_at",
+			}),
+		}).
+		Create(&approval).Error
+
+	return repository.CheckError(ctx, op, err)
 }
 
 func (r *ExperimentApprovalRepository) GetApprovalsByExperimentID(
@@ -2445,87 +3109,39 @@ func (r *ExperimentApprovalRepository) GetApprovalsByExperimentID(
 
 	err := r.db.WithContext(ctx).
 		Where("experiment_id = ?", experimentID).
-		Order("created_at ASC").
+		Order("version ASC, created_at ASC").
 		Find(&approvals).Error
 
 	if err := repository.CheckError(ctx, op, err); err != nil {
 		return nil, err
 	}
-
 	return approvals, nil
 }
 
-func (r *ExperimentApprovalRepository) ApproveExperiment(
+// CountApproved считает одобрения данной версии.
+// approverIDs == nil — считаем от любых согласующих (fallback без группы),
+// иначе только от перечисленных (участники группы).
+func (r *ExperimentApprovalRepository) CountApproved(
 	ctx context.Context,
 	experimentID uuid.UUID,
-	approverID uuid.UUID,
-) error {
-	const op = "ApproveExperiment"
-	now := time.Now()
+	version int,
+	approverIDs []uuid.UUID,
+) (int, error) {
+	const op = "CountApproved"
 
-	approval := models.ExperimentApproval{
-		ExperimentID: experimentID,
-		ApproverID:   approverID,
-		Status:       models.ApprovalApproved,
-		DecidedAt:    &now,
+	q := r.db.WithContext(ctx).
+		Model(&models.ExperimentApproval{}).
+		Where("experiment_id = ? AND version = ? AND status = ?",
+			experimentID, version, models.ApprovalApproved)
+	if approverIDs != nil {
+		q = q.Where("approver_id IN ?", approverIDs)
 	}
 
-	result := r.db.WithContext(ctx).
-		Create(&approval).Error
-	if err := repository.CheckError(ctx, op, result); err != nil {
-		return err
+	var n int64
+	if err := repository.CheckError(ctx, op, q.Count(&n).Error); err != nil {
+		return 0, err
 	}
-	return nil
-}
-
-func (r *ExperimentApprovalRepository) RequestExperimentChanges(
-	ctx context.Context,
-	experimentID uuid.UUID,
-	approverID uuid.UUID,
-	comment string,
-) error {
-	const op = "RequestExperimentChanges"
-	now := time.Now()
-
-	approval := models.ExperimentApproval{
-		ExperimentID: experimentID,
-		ApproverID:   approverID,
-		Status:       models.ApprovalChangesNeeded,
-		Comment:      comment,
-		DecidedAt:    &now,
-	}
-
-	result := r.db.WithContext(ctx).
-		Create(&approval).Error
-	if err := repository.CheckError(ctx, op, result); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (r *ExperimentApprovalRepository) RejectExperiment(
-	ctx context.Context,
-	experimentID uuid.UUID,
-	approverID uuid.UUID,
-	comment string,
-) error {
-	const op = "RejectExperiment"
-	now := time.Now()
-
-	approval := models.ExperimentApproval{
-		ExperimentID: experimentID,
-		ApproverID:   approverID,
-		Status:       models.ApprovalRejected,
-		Comment:      comment,
-		DecidedAt:    &now,
-	}
-
-	result := r.db.WithContext(ctx).
-		Create(&approval).Error
-	if err := repository.CheckError(ctx, op, result); err != nil {
-		return err
-	}
-	return nil
+	return int(n), nil
 }
 
 
@@ -2539,6 +3155,7 @@ import (
 	"AB_system/internal/repository"
 	"AB_system/pkg/errs"
 	"context"
+	"encoding/json"
 	"errors"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -2560,7 +3177,8 @@ func (r *ExperimentRepository) GetAllExperiments(
 	const op = "GetAllExperiments"
 	var result []models.Experiment
 	err := r.db.WithContext(ctx).
-		Preload("User").
+		Preload("Variants").
+		Order("created_at DESC").
 		Find(&result).Error
 	if err := repository.CheckError(ctx, op, err); err != nil {
 		return nil, err
@@ -2574,7 +3192,6 @@ func (r *ExperimentRepository) GetExperimentByID(
 	const op = "GetExperimentByID"
 	var result models.Experiment
 	err := r.db.WithContext(ctx).
-		Preload("User").
 		Preload("Variants").
 		First(&result, "id = ?", experimentID).Error
 	if err := repository.CheckError(ctx, op, err); err != nil {
@@ -2648,46 +3265,43 @@ func (r *ExperimentRepository) CreateExperiment(
 	experiment *models.Experiment,
 ) (*models.Experiment, error) {
 	const op = "CreateExperiment"
-	result := r.db.WithContext(ctx).Create(experiment).Error
-	if err := repository.CheckError(ctx, op, result); err != nil {
+	err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := tx.Create(experiment).Error; err != nil {
+			return err
+		}
+		snapshot, err := json.Marshal(experiment)
+		if err != nil {
+			return err
+		}
+		return tx.Create(&models.ExperimentVersion{
+			ExperimentID: experiment.ID,
+			Version:      experiment.Version,
+			Snapshot:     snapshot,
+		}).Error
+	})
+	if err := repository.CheckError(ctx, op, err); err != nil {
 		return nil, err
 	}
 	return experiment, nil
 }
 
-func (r *ExperimentRepository) TransitionExperiment(
+func (r *ExperimentRepository) TransitionStatus(
 	ctx context.Context,
 	experimentID uuid.UUID,
-	status models.ExperimentStatus,
+	from, to models.ExperimentStatus,
 ) error {
-	const op = "TransitionExperiment"
+	const op = "TransitionStatus"
+
 	result := r.db.WithContext(ctx).
 		Model(&models.Experiment{}).
-		Where("id = ?", experimentID).
-		Update("status", status)
+		Where("id = ? AND status = ?", experimentID, from).
+		Update("status", to)
 
 	if err := repository.CheckError(ctx, op, result.Error); err != nil {
 		return err
 	}
 	if result.RowsAffected == 0 {
-		return errs.ErrExperimentNotFound
-	}
-
-	return nil
-}
-func (r *ExperimentRepository) CompleteExperiment(
-	ctx context.Context,
-	experimentID uuid.UUID,
-) error {
-	const op = "CompleteExperiment"
-	result := r.db.WithContext(ctx).Model(&models.Experiment{}).
-		Where("id = ?", experimentID).
-		Update("status", models.ExperimentStatusCompleted)
-	if err := repository.CheckError(ctx, op, result.Error); err != nil {
-		return err
-	}
-	if result.RowsAffected == 0 {
-		return errs.ErrExperimentNotFound
+		return errs.ErrInvalidTransition
 	}
 	return nil
 }
@@ -2898,18 +3512,6 @@ func (r *UserRepository) UpdateUser(ctx context.Context, u *models.User) error {
 		Where("id = ?", u.ID).
 		Select("Name", "RoleID", "IsActive").
 		Updates(u)
-	if err := repository.CheckError(ctx, op, res.Error); err != nil {
-		return err
-	}
-	if res.RowsAffected == 0 {
-		return errs.ErrUserNotFound
-	}
-	return nil
-}
-
-func (r *UserRepository) DeleteUser(ctx context.Context, id uuid.UUID) error {
-	const op = "DeleteUser"
-	res := r.db.WithContext(ctx).Delete(&models.User{}, "id = ?", id)
 	if err := repository.CheckError(ctx, op, res.Error); err != nil {
 		return err
 	}
@@ -3192,6 +3794,8 @@ var (
 	ErrExperimentVariantsEmpty = errors.New("experiment variants is empty")
 	ErrWeightsSumMismatch      = errors.New("experiment weights sum mismatch")
 	ErrControlVariantCount     = errors.New("experiment must have exactly one control variant")
+	ErrCommentRequired         = errors.New("comment is required")
+	ErrActiveExperimentExists  = errors.New("на этом флаге уже есть запущенный или приостановленный эксперимент")
 )
 var (
 	ErrExperimentVariantNotFound     = errors.New("experiment variant not found")
