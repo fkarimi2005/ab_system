@@ -13,26 +13,39 @@ import (
 type Action string
 
 const (
-	ActionSubmit  Action = "submit"
-	ActionRework  Action = "rework"
-	ActionStart   Action = "start"
-	ActionPause   Action = "pause"
-	ActionResume  Action = "resume"
+	ActionSubmit   Action = "submit"
+	ActionRework   Action = "rework"
+	ActionStart    Action = "start"
+	ActionPause    Action = "pause"
+	ActionResume   Action = "resume"
+	ActionComplete Action = "complete"
+
 	ActionArchive Action = "archive"
 )
 
 type transitionRule struct {
-	from, to models.ExperimentStatus
+	from []models.ExperimentStatus
+	to   models.ExperimentStatus
+}
+
+func (r transitionRule) allows(s models.ExperimentStatus) bool {
+	for _, f := range r.from {
+		if f == s {
+			return true
+		}
+	}
+	return false
 }
 
 // Единственное место, где описаны допустимые переходы.
 var transitionRules = map[Action]transitionRule{
-	ActionSubmit:  {from: models.ExperimentStatusDraft, to: models.ExperimentStatusReview},
-	ActionRework:  {from: models.ExperimentStatusRejected, to: models.ExperimentStatusDraft},
-	ActionStart:   {from: models.ExperimentStatusApproved, to: models.ExperimentStatusRunning},
-	ActionPause:   {from: models.ExperimentStatusRunning, to: models.ExperimentStatusPaused},
-	ActionResume:  {from: models.ExperimentStatusPaused, to: models.ExperimentStatusRunning},
-	ActionArchive: {from: models.ExperimentStatusCompleted, to: models.ExperimentStatusArchived},
+	ActionSubmit:   {from: []models.ExperimentStatus{models.ExperimentStatusDraft}, to: models.ExperimentStatusReview},
+	ActionRework:   {from: []models.ExperimentStatus{models.ExperimentStatusRejected}, to: models.ExperimentStatusDraft},
+	ActionStart:    {from: []models.ExperimentStatus{models.ExperimentStatusApproved}, to: models.ExperimentStatusRunning},
+	ActionPause:    {from: []models.ExperimentStatus{models.ExperimentStatusRunning}, to: models.ExperimentStatusPaused},
+	ActionResume:   {from: []models.ExperimentStatus{models.ExperimentStatusPaused}, to: models.ExperimentStatusRunning},
+	ActionComplete: {from: []models.ExperimentStatus{models.ExperimentStatusRunning, models.ExperimentStatusPaused}, to: models.ExperimentStatusCompleted},
+	ActionArchive:  {from: []models.ExperimentStatus{models.ExperimentStatusCompleted, models.ExperimentStatusRejected}, to: models.ExperimentStatusArchived},
 }
 
 func (s *ExperimentService) Transition(
@@ -53,7 +66,8 @@ func (s *ExperimentService) Transition(
 	if e.OwnerID != actor.ID && !actor.IsAdmin() {
 		return models.Experiment{}, errs.ErrPermissionDenied
 	}
-	if e.Status != rule.from {
+	// было: if e.Status != rule.from {
+	if !rule.allows(e.Status) {
 		return models.Experiment{}, errs.ErrInvalidTransition
 	}
 
@@ -64,7 +78,8 @@ func (s *ExperimentService) Transition(
 		}
 	}
 
-	if err := s.experimentRepo.TransitionStatus(ctx, e.ID, rule.from, rule.to); err != nil {
+	// было: TransitionStatus(ctx, e.ID, rule.from, rule.to)
+	if err := s.experimentRepo.TransitionStatus(ctx, e.ID, e.Status, rule.to); err != nil {
 		// сработал частичный уникальный индекс: на флаге уже есть активный эксперимент
 		if action == ActionStart && errors.Is(err, errs.ErrDuplicateEntry) {
 			return models.Experiment{}, errs.ErrActiveExperimentExists

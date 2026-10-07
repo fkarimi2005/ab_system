@@ -32,6 +32,7 @@ func (h *ExperimentHandler) Register(r *gin.RouterGroup) {
 	g.POST("/:id/start", write, h.transition(service.ActionStart))
 	g.POST("/:id/pause", write, h.transition(service.ActionPause))
 	g.POST("/:id/resume", write, h.transition(service.ActionResume))
+	g.POST("/:id/complete", write, h.transition(service.ActionComplete))
 	g.POST("/:id/archive", write, h.transition(service.ActionArchive))
 }
 
