@@ -24,17 +24,37 @@ func TraceID() gin.HandlerFunc {
 }
 
 // RequestLogger пишет одну JSON-строку на каждый запрос.
+// Уровень зависит от статуса: 5xx — error, 4xx — warn, остальное — info.
+// Если хендлер приложил ошибку (c.Error), её текст попадает в поле err.
 func RequestLogger() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		start := time.Now()
 		c.Next()
+
 		ctx := c.Request.Context()
-		slog.InfoContext(ctx, "http request",
-			"method", c.Request.Method,
-			"path", c.FullPath(),
-			"status", c.Writer.Status(),
-			"duration_ms", time.Since(start).Milliseconds(),
-			"trace_id", observability.GetTraceID(ctx),
-		)
+		status := c.Writer.Status()
+
+		level := slog.LevelInfo
+		switch {
+		case status >= 500:
+			level = slog.LevelError
+		case status >= 400:
+			level = slog.LevelWarn
+		}
+
+		attrs := []slog.Attr{
+			slog.String("method", c.Request.Method),
+			slog.String("path", c.FullPath()),
+			slog.Int("status", status),
+			slog.Int64("duration_ms", time.Since(start).Milliseconds()),
+			slog.String("trace_id", observability.GetTraceID(ctx)),
+		}
+		if actor, ok := ActorFrom(c); ok {
+			attrs = append(attrs, slog.String("user_id", actor.ID.String()))
+		}
+		if last := c.Errors.Last(); last != nil {
+			attrs = append(attrs, slog.String("err", last.Err.Error()))
+		}
+		slog.LogAttrs(ctx, level, "http request", attrs...)
 	}
 }
