@@ -6,7 +6,6 @@ import (
 	"AB_system/internal/http/observability"
 	"AB_system/pkg/errs"
 	"errors"
-	"log/slog"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -16,12 +15,7 @@ import (
 func writeError(c *gin.Context, err error) {
 	ctx := c.Request.Context()
 	status, msg := mapError(err)
-	if status >= http.StatusInternalServerError {
-		slog.ErrorContext(ctx, "internal error",
-			"err", err,
-			"trace_id", observability.GetTraceID(ctx),
-		)
-	}
+	_ = c.Error(err) // RequestLogger запишет ошибку в лог после обработки запроса
 	c.JSON(status, gin.H{
 		"error":    msg,
 		"trace_id": observability.GetTraceID(ctx),
@@ -29,6 +23,7 @@ func writeError(c *gin.Context, err error) {
 }
 
 func writeBadRequest(c *gin.Context, err error) {
+	_ = c.Error(err)
 	c.JSON(http.StatusBadRequest, gin.H{
 		"error":    err.Error(),
 		"trace_id": observability.GetTraceID(c.Request.Context()),
@@ -41,9 +36,7 @@ func mapError(err error) (int, string) {
 		errors.Is(err, errs.ErrUserNotFound),
 		errors.Is(err, errs.ErrRoleNotFound),
 		errors.Is(err, errs.ErrExperimentNotFound),
-		errors.Is(err, errs.ErrExperimentNotFound),
 		errors.Is(err, errs.ErrVersionNotFound),
-		errors.Is(err, errs.ErrNotInApproverGroup),
 		errors.Is(err, errs.ErrRecordNotFound):
 		return http.StatusNotFound, err.Error()
 
@@ -56,7 +49,7 @@ func mapError(err error) (int, string) {
 		return http.StatusConflict, err.Error()
 
 	case errors.Is(err, errs.ErrPermissionDenied),
-		errors.Is(err, errs.ErrInvalidApproverGroup):
+		errors.Is(err, errs.ErrNotInApproverGroup):
 		return http.StatusForbidden, err.Error()
 
 	case errors.Is(err, errs.ErrKeyIsEmpty),
@@ -71,6 +64,7 @@ func mapError(err error) (int, string) {
 		errors.Is(err, errs.ErrExperimentVariantsEmpty),
 		errors.Is(err, errs.ErrWeightsSumMismatch),
 		errors.Is(err, errs.ErrCommentRequired),
+		errors.Is(err, errs.ErrInvalidApproverGroup),
 		errors.Is(err, errs.ErrControlVariantCount):
 		return http.StatusBadRequest, err.Error()
 

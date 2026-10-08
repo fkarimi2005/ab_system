@@ -81,6 +81,7 @@ func ActorFrom(c *gin.Context) (models.Actor, bool) {
 }
 
 func deny(c *gin.Context, status int, msg string) {
+	_ = c.Error(errors.New(msg))
 	c.AbortWithStatusJSON(status, gin.H{
 		"error":    msg,
 		"trace_id": observability.GetTraceID(c.Request.Context()),
