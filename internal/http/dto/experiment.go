@@ -3,6 +3,7 @@ package dto
 import (
 	"AB_system/internal/domain/models"
 	"AB_system/internal/domain/service/input"
+	"encoding/json"
 	"github.com/google/uuid"
 	"time"
 )
@@ -78,18 +79,22 @@ func (r UpdateExperimentRequest) ToInput() input.UpdateExperimentInput {
 	}
 	return in
 }
-func ToVariantModels(in []input.VariantInput) []models.ExperimentVariant {
-	res := make([]models.ExperimentVariant, 0, len(in))
-	for _, v := range in {
-		res = append(res, models.ExperimentVariant{
-			Name: v.Name, Value: v.Value, Weight: v.WeightBP, IsControl: v.IsControl,
-		})
-	}
-	return res
-}
 
 type UpdateExperimentRequest struct {
 	Name       string           `json:"name" binding:"required,max=255"`
 	AudienceBP int              `json:"audience_bp" binding:"required,gt=0,lte=10000"`
 	Variants   []VariantRequest `json:"variants" binding:"required,min=1,max=20,dive"`
+}
+type VersionResponse struct {
+	Version   int             `json:"version"`
+	Snapshot  json.RawMessage `json:"snapshot"`
+	CreatedAt time.Time       `json:"created_at"`
+}
+
+func NewVersionResponse(v models.ExperimentVersion) VersionResponse {
+	return VersionResponse{
+		Version:   v.Version,
+		Snapshot:  json.RawMessage(v.Snapshot),
+		CreatedAt: v.CreatedAt,
+	}
 }

@@ -5,7 +5,6 @@ import (
 	"AB_system/internal/domain/repository"
 	"AB_system/internal/domain/service/input"
 	"AB_system/internal/domain/service/validation"
-	"AB_system/internal/http/dto"
 	"AB_system/pkg/errs"
 	"context"
 	"encoding/json"
@@ -34,15 +33,7 @@ func (s *ExperimentService) CreateExperiment(
 		return nil, err
 	}
 
-	variants := make([]models.ExperimentVariant, 0, len(in.Variants))
-	for _, v := range in.Variants {
-		variants = append(variants, models.ExperimentVariant{
-			Name:      v.Name,
-			Value:     v.Value,
-			Weight:    v.WeightBP,
-			IsControl: v.IsControl,
-		})
-	}
+	variants := input.ToVariantModels(in.Variants)
 
 	if err := validation.ValidateConfig(in.Name, in.AudienceBP, variants); err != nil {
 		return nil, err
@@ -86,7 +77,7 @@ func (s *ExperimentService) UpdateExperiment(
 		return err
 	}
 
-	variants := dto.ToVariantModels(in.Variants)
+	variants := input.ToVariantModels(in.Variants)
 	if err := validation.ValidateConfig(in.Name, in.AudienceBP, variants); err != nil {
 		return err
 	}
@@ -114,4 +105,30 @@ func (s *ExperimentService) GetExperimentByID(ctx context.Context, id uuid.UUID)
 func (s *ExperimentService) GetExperiments(ctx context.Context) ([]models.Experiment, error) {
 	return s.experimentRepo.GetAllExperiments(ctx)
 
+}
+
+func (s *ExperimentService) GetVersions(
+	ctx context.Context, id uuid.UUID,
+) ([]models.ExperimentVersion, error) {
+	exists, err := s.experimentRepo.ExperimentExists(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	if !exists {
+		return nil, errs.ErrExperimentNotFound
+	}
+	return s.experimentRepo.ListVersions(ctx, id)
+}
+
+func (s *ExperimentService) GetVersion(
+	ctx context.Context, id uuid.UUID, version int,
+) (models.ExperimentVersion, error) {
+	v, err := s.experimentRepo.GetVersion(ctx, id, version)
+	if err != nil {
+		if errors.Is(err, errs.ErrRecordNotFound) {
+			return models.ExperimentVersion{}, errs.ErrVersionNotFound
+		}
+		return models.ExperimentVersion{}, err
+	}
+	return v, nil
 }

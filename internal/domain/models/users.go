@@ -25,7 +25,7 @@ type User struct {
 	Name      string         `json:"name" gorm:"not null"`
 	RoleID    uuid.UUID      `json:"role_id" gorm:"type:uuid;index"`
 	Role      Role           `json:"role" gorm:"foreignKey:RoleID;references:ID"`
-	IsActive  bool           `json:"is_active" gorm:"default:true"`
+	IsActive  bool           `json:"is_active" gorm:"not null"`
 	CreatedAt time.Time      `json:"created_at" gorm:"autoCreateTime"`
 	UpdatedAt time.Time      `json:"updated_at" gorm:"autoUpdateTime"`
 	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`

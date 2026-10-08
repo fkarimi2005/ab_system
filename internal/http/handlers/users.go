@@ -18,14 +18,13 @@ func NewUsersHandler(svc *service.UserService) *UsersHandler {
 	return &UsersHandler{svc: svc}
 }
 func (h *UsersHandler) Register(r *gin.RouterGroup) {
-	//В Register стоят PUT и DELETE. Мы решили PATCH и без удаления (деактивация через is_active).
 	g := r.Group("/users")
 	admin := middlewares.RequireRole(models.RoleAdmin)
 	g.POST("", admin, h.Create)
 	g.GET("", admin, h.List)
 	g.GET("/:id", admin, h.Get)
-	g.PUT("/:id", admin, h.Update)
-	g.DELETE("/:id", admin, h.Delete)
+	g.PATCH("/:id", admin, h.Update)
+	g.PATCH("/:id/delete", admin, h.Delete)
 }
 func (h *UsersHandler) Create(c *gin.Context) {
 	var req dto.UserRequest

@@ -50,18 +50,6 @@ func (r *UserRepository) UpdateUser(ctx context.Context, u *models.User) error {
 	return nil
 }
 
-func (r *UserRepository) DeleteUser(ctx context.Context, id uuid.UUID) error {
-	const op = "DeleteUser"
-	res := r.db.WithContext(ctx).Delete(&models.User{}, "id = ?", id)
-	if err := repository.CheckError(ctx, op, res.Error); err != nil {
-		return err
-	}
-	if res.RowsAffected == 0 {
-		return errs.ErrUserNotFound
-	}
-	return nil
-}
-
 func (r *UserRepository) GetAllUser(ctx context.Context) ([]models.User, error) {
 	const op = "GetAllUser"
 	var users []models.User

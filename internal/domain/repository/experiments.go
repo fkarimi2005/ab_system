@@ -37,20 +37,20 @@ type ExperimentWriter interface {
 }
 
 type ExperimentLifecycle interface {
-	TransitionExperiment(
+	TransitionStatus(
 		ctx context.Context,
 		experimentID uuid.UUID,
-		status models.ExperimentStatus,
+		from, to models.ExperimentStatus,
 	) error
-
-	CompleteExperiment(
-		ctx context.Context,
-		experimentID uuid.UUID,
-	) error
+}
+type ExperimentVersions interface {
+	ListVersions(ctx context.Context, experimentID uuid.UUID) ([]models.ExperimentVersion, error)
+	GetVersion(ctx context.Context, experimentID uuid.UUID, version int) (models.ExperimentVersion, error)
 }
 
 type ExperimentRepository interface {
 	ExperimentReader
 	ExperimentWriter
 	ExperimentLifecycle
+	ExperimentVersions
 }

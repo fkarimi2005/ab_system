@@ -8,6 +8,7 @@ import (
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type ExperimentApprovalRepository struct {
@@ -15,9 +16,46 @@ type ExperimentApprovalRepository struct {
 }
 
 func NewExperimentApprovalRepository(db *gorm.DB) *ExperimentApprovalRepository {
-	return &ExperimentApprovalRepository{
-		db: db,
+	return &ExperimentApprovalRepository{db: db}
+}
+
+// RecordDecision сохраняет решение согласующего по конкретной версии эксперимента.
+// Если этот человек уже решал по этой версии, решение перезаписывается.
+func (r *ExperimentApprovalRepository) RecordDecision(
+	ctx context.Context,
+	experimentID uuid.UUID,
+	approverID uuid.UUID,
+	version int,
+	status models.ApprovalStatus,
+	comment string,
+) error {
+	const op = "RecordDecision"
+	now := time.Now()
+
+	approval := models.ExperimentApproval{
+		ExperimentID: experimentID,
+		ApproverID:   approverID,
+		Version:      version,
+		Status:       status,
+		Comment:      comment,
+		DecidedAt:    &now,
 	}
+
+	err := r.db.WithContext(ctx).
+		Omit(clause.Associations).
+		Clauses(clause.OnConflict{
+			Columns: []clause.Column{
+				{Name: "experiment_id"},
+				{Name: "approver_id"},
+				{Name: "version"},
+			},
+			DoUpdates: clause.AssignmentColumns([]string{
+				"status", "comment", "decided_at", "updated_at",
+			}),
+		}).
+		Create(&approval).Error
+
+	return repository.CheckError(ctx, op, err)
 }
 
 func (r *ExperimentApprovalRepository) GetApprovalsByExperimentID(
@@ -29,85 +67,37 @@ func (r *ExperimentApprovalRepository) GetApprovalsByExperimentID(
 
 	err := r.db.WithContext(ctx).
 		Where("experiment_id = ?", experimentID).
-		Order("created_at ASC").
+		Order("version ASC, created_at ASC").
 		Find(&approvals).Error
 
 	if err := repository.CheckError(ctx, op, err); err != nil {
 		return nil, err
 	}
-
 	return approvals, nil
 }
 
-func (r *ExperimentApprovalRepository) ApproveExperiment(
+// CountApproved считает одобрения данной версии.
+// approverIDs == nil — считаем от любых согласующих (fallback без группы),
+// иначе только от перечисленных (участники группы).
+func (r *ExperimentApprovalRepository) CountApproved(
 	ctx context.Context,
 	experimentID uuid.UUID,
-	approverID uuid.UUID,
-) error {
-	const op = "ApproveExperiment"
-	now := time.Now()
+	version int,
+	approverIDs []uuid.UUID,
+) (int, error) {
+	const op = "CountApproved"
 
-	approval := models.ExperimentApproval{
-		ExperimentID: experimentID,
-		ApproverID:   approverID,
-		Status:       models.ApprovalApproved,
-		DecidedAt:    &now,
+	q := r.db.WithContext(ctx).
+		Model(&models.ExperimentApproval{}).
+		Where("experiment_id = ? AND version = ? AND status = ?",
+			experimentID, version, models.ApprovalApproved)
+	if approverIDs != nil {
+		q = q.Where("approver_id IN ?", approverIDs)
 	}
 
-	result := r.db.WithContext(ctx).
-		Create(&approval).Error
-	if err := repository.CheckError(ctx, op, result); err != nil {
-		return err
+	var n int64
+	if err := repository.CheckError(ctx, op, q.Count(&n).Error); err != nil {
+		return 0, err
 	}
-	return nil
-}
-
-func (r *ExperimentApprovalRepository) RequestExperimentChanges(
-	ctx context.Context,
-	experimentID uuid.UUID,
-	approverID uuid.UUID,
-	comment string,
-) error {
-	const op = "RequestExperimentChanges"
-	now := time.Now()
-
-	approval := models.ExperimentApproval{
-		ExperimentID: experimentID,
-		ApproverID:   approverID,
-		Status:       models.ApprovalChangesNeeded,
-		Comment:      comment,
-		DecidedAt:    &now,
-	}
-
-	result := r.db.WithContext(ctx).
-		Create(&approval).Error
-	if err := repository.CheckError(ctx, op, result); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (r *ExperimentApprovalRepository) RejectExperiment(
-	ctx context.Context,
-	experimentID uuid.UUID,
-	approverID uuid.UUID,
-	comment string,
-) error {
-	const op = "RejectExperiment"
-	now := time.Now()
-
-	approval := models.ExperimentApproval{
-		ExperimentID: experimentID,
-		ApproverID:   approverID,
-		Status:       models.ApprovalRejected,
-		Comment:      comment,
-		DecidedAt:    &now,
-	}
-
-	result := r.db.WithContext(ctx).
-		Create(&approval).Error
-	if err := repository.CheckError(ctx, op, result); err != nil {
-		return err
-	}
-	return nil
+	return int(n), nil
 }
