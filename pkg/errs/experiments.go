@@ -11,5 +11,7 @@ var (
 	ErrControlVariantCount     = errors.New("experiment must have exactly one control variant")
 	ErrCommentRequired         = errors.New("comment is required")
 	ErrActiveExperimentExists  = errors.New("на этом флаге уже есть запущенный или приостановленный эксперимент")
-	ErrVersionNotFound         = errors.New("версия эксперимента не найдено")
+	ErrVersionNotFound         = errors.New("версия эксперимента не найдена")
+	ErrInvalidApproverGroup    = errors.New("некорректная группа согласующих")
+	ErrNotInApproverGroup      = errors.New("вы не входите в группу согласующих владельца эксперимента")
 )

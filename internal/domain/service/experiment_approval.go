@@ -6,24 +6,46 @@ import (
 	"AB_system/pkg/errs"
 	"context"
 	"errors"
+	"slices"
 
 	"github.com/google/uuid"
 )
 
 // Пока групп согласующих нет: достаточно одного одобрения (fallback из ТЗ).
-const defaultMinApprovals = 1
 
 type ApprovalService struct {
 	experimentRepo repository.ExperimentRepository
 	approvalRepo   repository.ApprovalRepository
+	groupRepo      repository.ApproverGroupRepository
 }
 
 func NewApprovalService(
 	experimentRepo repository.ExperimentRepository,
 	approvalRepo repository.ApprovalRepository,
+	groupRepo repository.ApproverGroupRepository,
 ) *ApprovalService {
-	return &ApprovalService{experimentRepo: experimentRepo, approvalRepo: approvalRepo}
+	return &ApprovalService{experimentRepo: experimentRepo, approvalRepo: approvalRepo, groupRepo: groupRepo}
 }
+
+// approvalRule: сколько одобрений нужно и чьи они считаются.
+// members == nil — группы нет, подходит любой согласующий (fallback).
+type approvalRule struct {
+	min     int
+	members []uuid.UUID
+}
+
+func (s *ApprovalService) ruleFor(ctx context.Context, ownerID uuid.UUID) (approvalRule, error) {
+	g, err := s.groupRepo.GetApproverGroup(ctx, ownerID)
+	if err != nil {
+		if errors.Is(err, errs.ErrRecordNotFound) {
+			return approvalRule{min: defaultMinApprovals}, nil
+		}
+		return approvalRule{}, err
+	}
+	return approvalRule{min: g.MinApprovals, members: g.MemberIDs()}, nil
+}
+
+const defaultMinApprovals = 1
 
 // decide — общая часть всех трёх решений: проверки и запись решения.
 func (s *ApprovalService) decide(
@@ -32,26 +54,34 @@ func (s *ApprovalService) decide(
 	actor models.Actor,
 	status models.ApprovalStatus,
 	comment string,
-) (models.Experiment, error) {
+) (models.Experiment, approvalRule, error) {
 	e, err := s.experimentRepo.GetExperimentByID(ctx, experimentID)
 	if err != nil {
 		if errors.Is(err, errs.ErrRecordNotFound) {
-			return models.Experiment{}, errs.ErrExperimentNotFound
+			return models.Experiment{}, approvalRule{}, errs.ErrExperimentNotFound
 		}
-		return models.Experiment{}, err
+		return models.Experiment{}, approvalRule{}, err
 	}
 	if e.Status != models.ExperimentStatusReview {
-		return models.Experiment{}, errs.ErrInvalidTransition
+		return models.Experiment{}, approvalRule{}, errs.ErrInvalidTransition
 	}
 	if e.OwnerID == actor.ID {
-		return models.Experiment{}, errs.ErrPermissionDenied // нельзя согласовывать своё
+		return models.Experiment{}, approvalRule{}, errs.ErrPermissionDenied
 	}
-	if err := s.approvalRepo.RecordDecision(
-		ctx, e.ID, actor.ID, e.Version, status, comment,
-	); err != nil {
-		return models.Experiment{}, err
+
+	rule, err := s.ruleFor(ctx, e.OwnerID)
+	if err != nil {
+		return models.Experiment{}, approvalRule{}, err
 	}
-	return e, nil
+	// есть группа: решать могут только её участники
+	if rule.members != nil && !slices.Contains(rule.members, actor.ID) {
+		return models.Experiment{}, approvalRule{}, errs.ErrNotInApproverGroup
+	}
+
+	if err := s.approvalRepo.RecordDecision(ctx, e.ID, actor.ID, e.Version, status, comment); err != nil {
+		return models.Experiment{}, approvalRule{}, err
+	}
+	return e, rule, nil
 }
 
 // Approve — одобрение. Когда одобрений набралось достаточно,
@@ -63,16 +93,16 @@ func (s *ApprovalService) Approve(
 	comment string,
 ) error {
 
-	e, err := s.decide(ctx, experimentID, actor, models.ApprovalApproved, comment)
+	e, rule, err := s.decide(ctx, experimentID, actor, models.ApprovalApproved, comment)
 	if err != nil {
 		return err
 	}
 
-	n, err := s.approvalRepo.CountApproved(ctx, e.ID, e.Version, nil)
+	n, err := s.approvalRepo.CountApproved(ctx, e.ID, e.Version, rule.members)
 	if err != nil {
 		return err
 	}
-	if n < defaultMinApprovals {
+	if n < rule.min {
 		return nil
 	}
 
@@ -95,7 +125,7 @@ func (s *ApprovalService) Reject(
 	if comment == "" {
 		return errs.ErrCommentRequired
 	}
-	e, err := s.decide(ctx, experimentID, actor, models.ApprovalRejected, comment)
+	e, _, err := s.decide(ctx, experimentID, actor, models.ApprovalRejected, comment)
 	if err != nil {
 		return err
 	}
@@ -112,7 +142,7 @@ func (s *ApprovalService) RequestChanges(
 	if comment == "" {
 		return errs.ErrCommentRequired
 	}
-	e, err := s.decide(ctx, experimentID, actor, models.ApprovalChangesNeeded, comment)
+	e, _, err := s.decide(ctx, experimentID, actor, models.ApprovalChangesNeeded, comment)
 	if err != nil {
 		return err
 	}

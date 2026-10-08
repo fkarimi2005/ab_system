@@ -41,6 +41,9 @@ func mapError(err error) (int, string) {
 		errors.Is(err, errs.ErrUserNotFound),
 		errors.Is(err, errs.ErrRoleNotFound),
 		errors.Is(err, errs.ErrExperimentNotFound),
+		errors.Is(err, errs.ErrExperimentNotFound),
+		errors.Is(err, errs.ErrVersionNotFound),
+		errors.Is(err, errs.ErrNotInApproverGroup),
 		errors.Is(err, errs.ErrRecordNotFound):
 		return http.StatusNotFound, err.Error()
 
@@ -52,7 +55,8 @@ func mapError(err error) (int, string) {
 		errors.Is(err, errs.ErrInvalidTransition):
 		return http.StatusConflict, err.Error()
 
-	case errors.Is(err, errs.ErrPermissionDenied):
+	case errors.Is(err, errs.ErrPermissionDenied),
+		errors.Is(err, errs.ErrInvalidApproverGroup):
 		return http.StatusForbidden, err.Error()
 
 	case errors.Is(err, errs.ErrKeyIsEmpty),
