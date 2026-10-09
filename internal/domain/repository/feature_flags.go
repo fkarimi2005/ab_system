@@ -18,6 +18,10 @@ type FeatureFlagsReader interface {
 		ctx context.Context,
 		featureFlagID uuid.UUID,
 	) (bool, error)
+	GetFeatureFlagByKey(
+		ctx context.Context,
+		key string,
+	) (models.FeatureFlag, error)
 }
 type FeatureFlagsWriter interface {
 	CreateFeatureFlags(ctx context.Context, featureFlag *models.FeatureFlag) (*models.FeatureFlag, error)

@@ -20,6 +20,509 @@ DB_NAME=ab_system
 .idea/
 
 ================================================================================
+ФАЙЛ: C:\Users\Karimi\GolandProjects\AB_system\.md
+================================================================================
+# План работ: LOTTY A/B Platform
+
+Статусы: `[x]` готово, `[~]` частично, `[ ]` не начато. Размер: S — пара часов, M — полдня, L — день и больше.
+
+> Важно: план составлен по пересказу ТЗ (`Indiv/Backend/task.md`). Точные поля запросов и ответов,
+> названия и коды ошибок нужно сверить с оригиналом, особенно для `decide` и `events`.
+
+## Где мы сейчас
+
+| Раздел ТЗ | Статус | Что есть / чего нет |
+|---|---|---|
+| B0 Роли, согласование | `[x]` | роли, пользователи, `approve/reject/request-changes`, группы согласующих с порогом, fallback без группы (1 одобрение) |
+| B1 Фича-флаги | `[~]` | создание, чтение, смена default; сверить с ТЗ правило «default меняется только когда эксперимент активен» |
+| B2 Decide API | `[ ]` | не начато |
+| B3 Эксперименты | `[~]` | статусы, переходы, версии, заморозка конфигурации, один активный на флаг. Нет: таргетинг, метрики, guardrails в конфиге |
+| B4 События | `[ ]` | не начато |
+| B5 Guardrails | `[ ]` | не начато |
+| B6 Отчёты | `[ ]` | не начато |
+| B7 Архитектура | `[ ]` | слои есть, диаграммы и матрица компромиссов нет |
+| B8 Тесты | `[~]` | есть тесты валидации и request logger |
+| B9 Операционка | `[~]` | `/health`, `/ready`, JSON-логи в stdout и `.logs/app.log`; нет `/metrics` |
+| B10 Дисциплина | `[ ]` | нет конфига линтера |
+| D Документы и запуск | `[ ]` | нет README, runbook, Docker, тестовых данных, матрицы |
+
+Принципы из ТЗ, которые влияют на каждый шаг:
+1. Ничего не зашито в код: метрики, события, guardrails, таргетинг настраиваются данными.
+2. Одинаковые входы дают одинаковые решения; изменения конфигурации пишутся в аудит.
+3. Всё заявленное должно проверяться на тестовых данных за 30 минут, иначе баллов за него нет.
+4. Упрощения нужно записывать явно (раздел «Допущения» в README).
+
+---
+
+## Шаг 0. Закрыть текущее (S)
+
+- [ ] Слить ветку `claude/nifty-archimedes-u9fj7c` в `main` (исправления `mapError`, логирование ошибок).
+- [ ] Получить из ТЗ точные контракты `decide`, `events`, отчётов и сверить с планом ниже.
+- [ ] Удалить `AB_system_code.txt` из репозитория, добавить в `.gitignore`.
+- [ ] Проверить после слияния: `go build ./... && go vet ./... && go test ./...`.
+- [ ] Один раз пройти руками сценарий: флаг → эксперимент → `submit` → `approve` → `start` → `complete`.
+
+---
+
+
+---------------------------------------------------------------------------------------
+Сначала проверю код в песочнице, чтобы вы не получили сломанный.
+
+Я написал и прогнал код у себя: 6 тестов проходят, покрытие 91,7%. Ниже готовые файлы и затем как подключить их к эксперименту.
+
+## Идея в двух словах
+
+Правило — это дерево из узлов. Узел это либо `and`/`or` (список вложенных), либо `not` (один вложенный), либо условие «атрибут, оператор, значение». Работа делится на две функции:
+- `Parse` разбирает JSON и проверяет его (вызывается при сохранении эксперимента, ошибки правила находятся сразу).
+- `Matches` проходит по дереву и отвечает «подходит или нет» (вызывается в Decide при каждом запросе).
+
+## Файл 1: `internal/domain/targeting/rule.go`
+
+```go
+// Package targeting — DSL правил таргетинга: кому показывать эксперимент.
+package targeting
+
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"fmt"
+)
+
+const maxDepth = 10
+
+// Kind определяет, как сравниваются значения атрибута.
+type Kind int
+
+const (
+	KindString  Kind = iota // ==, !=, in
+	KindVersion             // как строка + >, >=, <, <= по числовым сегментам
+)
+
+// Attributes — разрешённые атрибуты. Новый атрибут добавляется здесь, код правил не меняется.
+var Attributes = map[string]Kind{
+	"country":  KindString,
+	"platform": KindString,
+	"version":  KindVersion,
+}
+
+// Node — узел дерева: ровно одно из And / Or / Not либо лист (Attr + Op + Value).
+type Node struct {
+	And []Node `json:"and,omitempty"`
+	Or  []Node `json:"or,omitempty"`
+	Not *Node  `json:"not,omitempty"`
+
+	Attr  string `json:"attr,omitempty"`
+	Op    string `json:"op,omitempty"`
+	Value any    `json:"value,omitempty"`
+}
+
+// Parse разбирает и проверяет правило. Пустой ввод и null — «подходят все» (nil, nil).
+func Parse(raw []byte) (*Node, error) {
+	raw = bytes.TrimSpace(raw)
+	if len(raw) == 0 || bytes.Equal(raw, []byte("null")) {
+		return nil, nil
+	}
+	var n Node
+	dec := json.NewDecoder(bytes.NewReader(raw))
+	dec.DisallowUnknownFields()
+	if err := dec.Decode(&n); err != nil {
+		return nil, fmt.Errorf("targeting: %w", err)
+	}
+	if err := n.validate(1); err != nil {
+		return nil, fmt.Errorf("targeting: %w", err)
+	}
+	return &n, nil
+}
+
+func (n *Node) validate(depth int) error {
+	if depth > maxDepth {
+		return errors.New("слишком глубокая вложенность")
+	}
+
+	kinds := 0
+	if n.And != nil {
+		kinds++
+	}
+	if n.Or != nil {
+		kinds++
+	}
+	if n.Not != nil {
+		kinds++
+	}
+	if n.Attr != "" || n.Op != "" || n.Value != nil {
+		kinds++
+	}
+	if kinds != 1 {
+		return errors.New("узел должен содержать ровно одно из: and, or, not или условие attr/op/value")
+	}
+
+	switch {
+	case n.And != nil:
+		return validateChildren("and", n.And, depth)
+	case n.Or != nil:
+		return validateChildren("or", n.Or, depth)
+	case n.Not != nil:
+		return n.Not.validate(depth + 1)
+	default:
+		return n.validateLeaf()
+	}
+}
+
+func validateChildren(name string, children []Node, depth int) error {
+	if len(children) == 0 {
+		return fmt.Errorf("%s: список условий пуст", name)
+	}
+	for i := range children {
+		if err := children[i].validate(depth + 1); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (n *Node) validateLeaf() error {
+	kind, ok := Attributes[n.Attr]
+	if !ok {
+		return fmt.Errorf("неизвестный атрибут %q", n.Attr)
+	}
+	switch n.Op {
+	case "==", "!=":
+		return checkValue(n.Attr, n.Value, kind)
+	case "in":
+		list, ok := n.Value.([]any)
+		if !ok || len(list) == 0 {
+			return fmt.Errorf("%s: для in нужен непустой массив", n.Attr)
+		}
+		for _, v := range list {
+			if err := checkValue(n.Attr, v, kind); err != nil {
+				return err
+			}
+		}
+		return nil
+	case ">", ">=", "<", "<=":
+		if kind != KindVersion {
+			return fmt.Errorf("%s: оператор %s не поддерживается для этого атрибута", n.Attr, n.Op)
+		}
+		return checkValue(n.Attr, n.Value, kind)
+	default:
+		return fmt.Errorf("неизвестный оператор %q", n.Op)
+	}
+}
+
+func checkValue(attr string, v any, kind Kind) error {
+	s, ok := v.(string)
+	if !ok || s == "" {
+		return fmt.Errorf("%s: значение должно быть непустой строкой", attr)
+	}
+	if kind == KindVersion {
+		if _, err := parseVersion(s); err != nil {
+			return fmt.Errorf("%s: %w", attr, err)
+		}
+	}
+	return nil
+}
+```
+
+## Файл 2: `eval.go`
+
+```go
+package targeting
+
+// Matches сообщает, подходит ли пользователь с атрибутами attrs под правило.
+// nil-правило подходит всем.
+//
+// Если атрибута нет в запросе, условие с ним ложно (в том числе для !=).
+// Поэтому not(country == "RU") для пользователя без country истинно.
+func (n *Node) Matches(attrs map[string]string) bool {
+	if n == nil {
+		return true
+	}
+	switch {
+	case n.And != nil:
+		for i := range n.And {
+			if !n.And[i].Matches(attrs) {
+				return false
+			}
+		}
+		return true
+	case n.Or != nil:
+		for i := range n.Or {
+			if n.Or[i].Matches(attrs) {
+				return true
+			}
+		}
+		return false
+	case n.Not != nil:
+		return !n.Not.Matches(attrs)
+	default:
+		return n.matchLeaf(attrs)
+	}
+}
+
+func (n *Node) matchLeaf(attrs map[string]string) bool {
+	actual, ok := attrs[n.Attr]
+	if !ok {
+		return false
+	}
+	kind := Attributes[n.Attr]
+
+	switch n.Op {
+	case "in":
+		for _, v := range n.Value.([]any) {
+			if equal(kind, actual, v.(string)) {
+				return true
+			}
+		}
+		return false
+	case "==":
+		return equal(kind, actual, n.Value.(string))
+	case "!=":
+		return !equal(kind, actual, n.Value.(string))
+	}
+
+	// порядковые сравнения: только версии
+	a, err := parseVersion(actual)
+	if err != nil {
+		return false // некорректная версия в запросе не подходит ни под одно условие
+	}
+	b, _ := parseVersion(n.Value.(string))
+	c := compareVersions(a, b)
+	switch n.Op {
+	case ">":
+		return c > 0
+	case ">=":
+		return c >= 0
+	case "<":
+		return c < 0
+	default: // "<="
+		return c <= 0
+	}
+}
+
+func equal(kind Kind, actual, want string) bool {
+	if kind == KindVersion {
+		a, err := parseVersion(actual)
+		if err != nil {
+			return false
+		}
+		b, _ := parseVersion(want)
+		return compareVersions(a, b) == 0
+	}
+	return actual == want
+}
+```
+Приведения `.(string)` в `matchLeaf` безопасны, потому что `Parse` уже проверил типы. Поэтому правило нужно создавать только через `Parse`, а не собирать вручную.
+
+## Файл 3: `version.go`
+
+```go
+package targeting
+
+import (
+	"fmt"
+	"strconv"
+	"strings"
+)
+
+// parseVersion превращает "2.10.1" в []int{2, 10, 1}.
+func parseVersion(s string) ([]int, error) {
+	parts := strings.Split(s, ".")
+	res := make([]int, 0, len(parts))
+	for _, p := range parts {
+		n, err := strconv.Atoi(p)
+		if err != nil || n < 0 {
+			return nil, fmt.Errorf("некорректная версия %q", s)
+		}
+		res = append(res, n)
+	}
+	return res, nil
+}
+
+// compareVersions сравнивает по сегментам; недостающие сегменты считаются нулями
+// (поэтому 2.5 == 2.5.0). Возвращает -1, 0 или 1.
+func compareVersions(a, b []int) int {
+	for i := 0; i < max(len(a), len(b)); i++ {
+		var x, y int
+		if i < len(a) {
+			x = a[i]
+		}
+		if i < len(b) {
+			y = b[i]
+		}
+		if x != y {
+			if x < y {
+				return -1
+			}
+			return 1
+		}
+	}
+	return 0
+}
+```
+Ключевое место: версия сравнивается по числовым сегментам, поэтому `2.10` новее `2.9`.
+
+## Файл 4: тесты `rule_test.go`
+
+```go
+package targeting
+
+import "testing"
+
+func TestMatches(t *testing.T) {
+	rule := `{"and":[
+		{"attr":"country","op":"in","value":["RU","KZ"]},
+		{"attr":"version","op":">=","value":"2.5.0"},
+		{"not":{"attr":"platform","op":"==","value":"web"}}
+	]}`
+	n, err := Parse([]byte(rule))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	tests := []struct {
+		name  string
+		attrs map[string]string
+		want  bool
+	}{
+		{"подходит", map[string]string{"country": "RU", "version": "2.6.0", "platform": "ios"}, true},
+		{"другая страна", map[string]string{"country": "US", "version": "2.6.0", "platform": "ios"}, false},
+		{"версия ниже", map[string]string{"country": "RU", "version": "2.4.9", "platform": "ios"}, false},
+		{"граница версии", map[string]string{"country": "KZ", "version": "2.5.0", "platform": "android"}, true},
+		{"2.10 новее 2.9", map[string]string{"country": "RU", "version": "2.10", "platform": "ios"}, true},
+		{"web запрещён", map[string]string{"country": "RU", "version": "3.0.0", "platform": "web"}, false},
+		{"нет platform: not(...) истинно", map[string]string{"country": "RU", "version": "3.0.0"}, true},
+		{"нет country", map[string]string{"version": "3.0.0", "platform": "ios"}, false},
+		{"мусор в версии", map[string]string{"country": "RU", "version": "abc", "platform": "ios"}, false},
+	}
+	for _, tt := range tests {
+		if got := n.Matches(tt.attrs); got != tt.want {
+			t.Errorf("%s: got %v, want %v", tt.name, got, tt.want)
+		}
+	}
+}
+
+func TestEmptyRuleMatchesEveryone(t *testing.T) {
+	for _, raw := range []string{"", "  ", "null"} {
+		n, err := Parse([]byte(raw))
+		if err != nil || n != nil {
+			t.Fatalf("%q: n=%v err=%v", raw, n, err)
+		}
+		if !n.Matches(nil) {
+			t.Errorf("%q: nil-правило должно подходить всем", raw)
+		}
+	}
+}
+
+func TestParseErrors(t *testing.T) {
+	bad := map[string]string{
+		"кривой json":             `{"and":`,
+		"неизвестное поле":        `{"xor":[]}`,
+		"пустой объект":           `{}`,
+		"пустой and":              `{"and":[]}`,
+		"неизвестный атрибут":     `{"attr":"age","op":"==","value":"1"}`,
+		"неизвестный оператор":    `{"attr":"country","op":"like","value":"R"}`,
+		"порядок для строки":      `{"attr":"country","op":">","value":"RU"}`,
+		"in без массива":          `{"attr":"country","op":"in","value":"RU"}`,
+		"in пустой":               `{"attr":"country","op":"in","value":[]}`,
+		"число вместо строки":     `{"attr":"country","op":"==","value":5}`,
+		"плохая версия в правиле": `{"attr":"version","op":">","value":"2.x"}`,
+		"нет значения":            `{"attr":"country","op":"=="}`,
+	}
+	for name, raw := range bad {
+		if _, err := Parse([]byte(raw)); err == nil {
+			t.Errorf("%s: ожидалась ошибка", name)
+		}
+	}
+}
+
+func TestDepthLimit(t *testing.T) {
+	raw := `{"attr":"country","op":"==","value":"RU"}`
+	for i := 0; i < maxDepth+1; i++ {
+		raw = `{"not":` + raw + `}`
+	}
+	if _, err := Parse([]byte(raw)); err == nil {
+		t.Error("ожидалась ошибка глубины")
+	}
+}
+```
+Запуск: `go test ./internal/domain/targeting/ -cover`.
+
+## Принятые решения (запишите в README, раздел «Допущения»)
+
+1. **Нет атрибута в запросе**: условие с ним ложно, даже для `!=`. Но `not(...)` над ним истинно. Проверяющему это нужно знать.
+2. **Пустое правило** (`null` или отсутствует) подходит всем.
+3. **Версии** `2.5` и `2.5.0` считаются равными.
+4. **Значения только строки**, так как атрибуты приходят в запросе строками.
+5. **Новый атрибут** добавляется одной строкой в `Attributes`.
+
+## Подключение к эксперименту (этот кусок я не компилировал)
+
+1. **Модель** (`models/experiments.go`): поле `Targeting datatypes.JSON `json:"targeting,omitempty" gorm:"type:jsonb"``. Нужен пакет `go get gorm.io/datatypes` и импорт `gorm.io/datatypes`. Он важен, потому что обычный `[]byte` при `json.Marshal` превратится в base64 в snapshot версии.
+2. **DTO** (`dto/experiment.go`): в `CreateExperimentRequest` и `UpdateExperimentRequest` поле `Targeting json.RawMessage `json:"targeting"``; в `ExperimentResponse` тоже, чтобы возвращать правило. В `input.CreateExperimentInput` и `UpdateExperimentInput` поле `Targeting []byte`.
+3. **Ошибка** (`pkg/errs`): `ErrInvalidTargeting = errors.New("некорректное правило таргетинга")` и в `mapError` в список 400.
+4. **Сервис**: перед сохранением и при `submit` вызвать
+   ```go
+   if _, err := targeting.Parse(in.Targeting); err != nil {
+       return fmt.Errorf("%w: %v", errs.ErrInvalidTargeting, err)
+   }
+   ```
+   (в `CreateExperiment`, `UpdateExperiment` и `validateForReview`). Так в ответе будет и общая ошибка, и деталь («неизвестный атрибут "age"»).
+5. **Репозиторий** (`postgres/experiments.go`, `UpdateExperiment`): в `Select("Name", "AudienceBP", "Version")` добавьте `"Targeting"`, иначе при `PUT` правило не сохранится. Это самая частая ошибка здесь.
+6. **Проверка:** создать эксперимент с правилом, сделать `GET`, увидеть правило; отправить `{"attr":"age",...}`, получить 400 с понятным текстом; отредактировать правило через `PUT` и проверить в `/versions/2`, что оно изменилось.
+
+Присылайте, когда напишете, я проверю. После этого можно идти к Decide API, где `Matches` будет вызываться для каждого запроса.
+
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Decide API это тот самый запрос, ради которого существует вся платформа. Приложение (мобильное или сайт) спрашивает у вашего сервиса: «какое значение флага показать этому пользователю?», а сервис отвечает.
+
+## Пример
+
+Приложение рисует экран и ему нужен цвет кнопки. Оно отправляет запрос:
+```
+POST /api/v1/decide
+{
+  "subject_id": "user-42",
+  "attributes": {"country": "RU", "version": "2.6.0", "platform": "ios"},
+  "flag_keys": ["button_color"]
+}
+```
+Сервис отвечает:
+```json
+{
+  "button_color": {
+    "value": "red",
+    "decision_id": "7f3a…",
+    "experiment_id": "…",
+    "variant": "red"
+  }
+}
+```
+Приложение красит кнопку в красный. Другому пользователю тот же запрос может вернуть `blue`, а третьему значение по умолчанию.
+
+Здесь `subject_id` это стабильный идентификатор пользователя или устройства, по нему сервис решает, в какую группу пользователя отнести. `decision_id` это номер этого решения, потом приложение присылает его вместе с событиями («показали», «нажал»), чтобы связать действие с вариантом.
+
+## Что происходит внутри (по шагам)
+
+1. **Есть ли запущенный эксперимент на этот флаг?** Нет, значит возвращаем значение по умолчанию.
+2. **Подходит ли пользователь под таргетинг?** (то, что мы только что разбирали). Нет, значит значение по умолчанию.
+3. **Попал ли пользователь в аудиторию эксперимента?** Если аудитория 20%, то в эксперимент попадают 20% пользователей, остальные получают значение по умолчанию.
+4. **Какой вариант?** Среди попавших вариант выбирается по весам (например, 50/50 между blue и red).
+5. Сервис возвращает значение и `decision_id`.
+
+## Главные свойства
+
+- **Детерминизм:** один и тот же пользователь при одной и той же конфигурации всегда получает один и тот же ответ. Достигается тем, что вариант считается не случайно, а из хеша от `subject_id` и идентификатора эксперимента (одинаковые входные данные дают одинаковый хеш).
+- **Stickiness (липкость):** пользователь не «прыгает» между вариантами. Для этого и нужна заморозка конфигурации после запуска: хеш не меняется, веса не меняются.
+- **Защита пользователя:** один человек не должен попадать сразу в слишком много экспериментов, и после эксперимента ему даётся пауза (cooldown).
+
+## Почему это самое важное в проекте
+
+Всё, что вы сделали раньше (флаги, эксперименты, согласование, версии, таргетинг), нужно, чтобы **подготовить** этот запрос. Decide единственное место, где платформа реально работает с пользователями. Дальше от него зависят события (они ссылаются на `decision_id`), отчёты и guardrails. Без него проверяющий не увидит, что система вообще что-то делает.
+
+Хотите, разберу, как посчитать «корзину» и выбрать вариант по весам: это самая интересная часть алгоритма?
+
+================================================================================
 ФАЙЛ: C:\Users\Karimi\GolandProjects\AB_system\go.mod
 ================================================================================
 module AB_system
@@ -290,8 +793,10 @@ func New(ctx context.Context, cfg configs.Config) (*App, error) {
 	userSvc := service.NewUserService(userRepo, roleRepo)
 	ExperimentRepo := pgrepo.NewExperimentRepository(db)
 	ExperimentSvc := service.NewExperimentService(ExperimentRepo, flagRepo)
+	groupRepo := pgrepo.NewApproverGroupRepository(db)
+	groupSvc := service.NewApproverGroupService(groupRepo, userRepo)
 	approvalRepo := pgrepo.NewExperimentApprovalRepository(db)
-	approvalSvc := service.NewApprovalService(ExperimentRepo, approvalRepo)
+	approvalSvc := service.NewApprovalService(ExperimentRepo, approvalRepo, groupRepo)
 
 	engine := router.New(router.Deps{
 		Health: handler.NewHealthHandler(sqlDB),
@@ -301,6 +806,7 @@ func New(ctx context.Context, cfg configs.Config) (*App, error) {
 			handler.NewUsersHandler(userSvc),
 			handler.NewExperimentHandler(ExperimentSvc),
 			handler.NewApprovalHandler(approvalSvc, ExperimentSvc),
+			handler.NewApproverGroupHandler(groupSvc),
 		},
 	},
 	)
@@ -732,6 +1238,51 @@ func (a Actor) IsAdmin() bool { return a.Role == RoleAdmin }
 
 
 ================================================================================
+ФАЙЛ: C:\Users\Karimi\GolandProjects\AB_system\internal\domain\models\approver_group.go
+================================================================================
+package models
+
+import (
+	"time"
+
+	"github.com/google/uuid"
+)
+
+type ApproverGroup struct {
+	ID             uuid.UUID `gorm:"primaryKey;type:uuid;default:gen_random_uuid()"`
+	ExperimenterID uuid.UUID `gorm:"type:uuid;not null;uniqueIndex"` // одна группа на экспериментатора
+	MinApprovals   int       `gorm:"not null;check:chk_group_min_approvals,min_approvals >= 1"`
+
+	Members []ApproverGroupMember `gorm:"foreignKey:GroupID;constraint:OnDelete:CASCADE"`
+
+	CreatedAt time.Time `gorm:"autoCreateTime"`
+	UpdatedAt time.Time `gorm:"autoUpdateTime"`
+}
+
+type ApproverGroupMember struct {
+	GroupID    uuid.UUID `gorm:"type:uuid;primaryKey"`
+	ApproverID uuid.UUID `gorm:"type:uuid;primaryKey"`
+}
+
+func (g ApproverGroup) MemberIDs() []uuid.UUID {
+	ids := make([]uuid.UUID, 0, len(g.Members))
+	for _, m := range g.Members {
+		ids = append(ids, m.ApproverID)
+	}
+	return ids
+}
+
+func (g ApproverGroup) HasMember(id uuid.UUID) bool {
+	for _, m := range g.Members {
+		if m.ApproverID == id {
+			return true
+		}
+	}
+	return false
+}
+
+
+================================================================================
 ФАЙЛ: C:\Users\Karimi\GolandProjects\AB_system\internal\domain\models\experiments.go
 ================================================================================
 package models
@@ -897,7 +1448,7 @@ type User struct {
 	Name      string         `json:"name" gorm:"not null"`
 	RoleID    uuid.UUID      `json:"role_id" gorm:"type:uuid;index"`
 	Role      Role           `json:"role" gorm:"foreignKey:RoleID;references:ID"`
-	IsActive  bool           `json:"is_active" gorm:"default:true"`
+	IsActive  bool           `json:"is_active" gorm:"not null"`
 	CreatedAt time.Time      `json:"created_at" gorm:"autoCreateTime"`
 	UpdatedAt time.Time      `json:"updated_at" gorm:"autoUpdateTime"`
 	DeletedAt gorm.DeletedAt `json:"-" gorm:"index"`
@@ -944,6 +1495,24 @@ type ApprovalReader interface {
 		version int,
 		approverIDs []uuid.UUID,
 	) (int, error)
+}
+
+
+================================================================================
+ФАЙЛ: C:\Users\Karimi\GolandProjects\AB_system\internal\domain\repository\approver_group.go
+================================================================================
+package repository
+
+import (
+	"AB_system/internal/domain/models"
+	"context"
+
+	"github.com/google/uuid"
+)
+
+type ApproverGroupRepository interface {
+	GetApproverGroup(ctx context.Context, experimenterID uuid.UUID) (models.ApproverGroup, error)
+	SaveApproverGroup(ctx context.Context, g *models.ApproverGroup) error
 }
 
 
@@ -995,11 +1564,16 @@ type ExperimentLifecycle interface {
 		from, to models.ExperimentStatus,
 	) error
 }
+type ExperimentVersions interface {
+	ListVersions(ctx context.Context, experimentID uuid.UUID) ([]models.ExperimentVersion, error)
+	GetVersion(ctx context.Context, experimentID uuid.UUID, version int) (models.ExperimentVersion, error)
+}
 
 type ExperimentRepository interface {
 	ExperimentReader
 	ExperimentWriter
 	ExperimentLifecycle
+	ExperimentVersions
 }
 
 
@@ -1121,6 +1695,94 @@ type UserRepository interface {
 
 
 ================================================================================
+ФАЙЛ: C:\Users\Karimi\GolandProjects\AB_system\internal\domain\service\approver_groups.go
+================================================================================
+package service
+
+import (
+	"AB_system/internal/domain/models"
+	"AB_system/internal/domain/repository"
+	"AB_system/pkg/errs"
+	"context"
+	"errors"
+
+	"github.com/google/uuid"
+)
+
+type ApproverGroupService struct {
+	groups repository.ApproverGroupRepository
+	users  repository.UserRepository
+}
+
+func NewApproverGroupService(
+	groups repository.ApproverGroupRepository,
+	users repository.UserRepository,
+) *ApproverGroupService {
+	return &ApproverGroupService{groups: groups, users: users}
+}
+
+func (s *ApproverGroupService) user(ctx context.Context, id uuid.UUID) (models.User, error) {
+	u, err := s.users.GetUserByID(ctx, id)
+	if err != nil {
+		if errors.Is(err, errs.ErrRecordNotFound) {
+			return models.User{}, errs.ErrUserNotFound
+		}
+		return models.User{}, err
+	}
+	return u, nil
+}
+
+// Get: смотреть группу может admin или сам экспериментатор.
+func (s *ApproverGroupService) Get(
+	ctx context.Context, actor models.Actor, experimenterID uuid.UUID,
+) (models.ApproverGroup, error) {
+	if !actor.IsAdmin() && actor.ID != experimenterID {
+		return models.ApproverGroup{}, errs.ErrPermissionDenied
+	}
+	return s.groups.GetApproverGroup(ctx, experimenterID)
+}
+
+func (s *ApproverGroupService) Set(
+	ctx context.Context, experimenterID uuid.UUID, approverIDs []uuid.UUID, minApprovals int,
+) (models.ApproverGroup, error) {
+	owner, err := s.user(ctx, experimenterID)
+	if err != nil {
+		return models.ApproverGroup{}, err
+	}
+	if owner.Role.RoleName != models.RoleExperimenter && owner.Role.RoleName != models.RoleAdmin {
+		return models.ApproverGroup{}, errs.ErrInvalidApproverGroup
+	}
+	if len(approverIDs) == 0 || minApprovals < 1 || minApprovals > len(approverIDs) {
+		return models.ApproverGroup{}, errs.ErrInvalidApproverGroup
+	}
+
+	g := models.ApproverGroup{ExperimenterID: experimenterID, MinApprovals: minApprovals}
+	seen := make(map[uuid.UUID]bool, len(approverIDs))
+	for _, id := range approverIDs {
+		if seen[id] || id == experimenterID { // дубли и сам владелец не допускаются
+			return models.ApproverGroup{}, errs.ErrInvalidApproverGroup
+		}
+		seen[id] = true
+
+		u, err := s.user(ctx, id)
+		if err != nil {
+			return models.ApproverGroup{}, err
+		}
+		isApprover := u.Role.RoleName == models.RoleApprover || u.Role.RoleName == models.RoleAdmin
+		if !u.IsActive || !isApprover {
+			return models.ApproverGroup{}, errs.ErrInvalidApproverGroup
+		}
+		g.Members = append(g.Members, models.ApproverGroupMember{ApproverID: id})
+	}
+
+	if err := s.groups.SaveApproverGroup(ctx, &g); err != nil {
+		return models.ApproverGroup{}, err
+	}
+	return g, nil
+}
+
+
+================================================================================
 ФАЙЛ: C:\Users\Karimi\GolandProjects\AB_system\internal\domain\service\experiments.go
 ================================================================================
 package service
@@ -1232,6 +1894,32 @@ func (s *ExperimentService) GetExperiments(ctx context.Context) ([]models.Experi
 
 }
 
+func (s *ExperimentService) GetVersions(
+	ctx context.Context, id uuid.UUID,
+) ([]models.ExperimentVersion, error) {
+	exists, err := s.experimentRepo.ExperimentExists(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	if !exists {
+		return nil, errs.ErrExperimentNotFound
+	}
+	return s.experimentRepo.ListVersions(ctx, id)
+}
+
+func (s *ExperimentService) GetVersion(
+	ctx context.Context, id uuid.UUID, version int,
+) (models.ExperimentVersion, error) {
+	v, err := s.experimentRepo.GetVersion(ctx, id, version)
+	if err != nil {
+		if errors.Is(err, errs.ErrRecordNotFound) {
+			return models.ExperimentVersion{}, errs.ErrVersionNotFound
+		}
+		return models.ExperimentVersion{}, err
+	}
+	return v, nil
+}
+
 
 ================================================================================
 ФАЙЛ: C:\Users\Karimi\GolandProjects\AB_system\internal\domain\service\experiment_approval.go
@@ -1244,24 +1932,46 @@ import (
 	"AB_system/pkg/errs"
 	"context"
 	"errors"
+	"slices"
 
 	"github.com/google/uuid"
 )
 
 // Пока групп согласующих нет: достаточно одного одобрения (fallback из ТЗ).
-const defaultMinApprovals = 1
 
 type ApprovalService struct {
 	experimentRepo repository.ExperimentRepository
 	approvalRepo   repository.ApprovalRepository
+	groupRepo      repository.ApproverGroupRepository
 }
 
 func NewApprovalService(
 	experimentRepo repository.ExperimentRepository,
 	approvalRepo repository.ApprovalRepository,
+	groupRepo repository.ApproverGroupRepository,
 ) *ApprovalService {
-	return &ApprovalService{experimentRepo: experimentRepo, approvalRepo: approvalRepo}
+	return &ApprovalService{experimentRepo: experimentRepo, approvalRepo: approvalRepo, groupRepo: groupRepo}
 }
+
+// approvalRule: сколько одобрений нужно и чьи они считаются.
+// members == nil — группы нет, подходит любой согласующий (fallback).
+type approvalRule struct {
+	min     int
+	members []uuid.UUID
+}
+
+func (s *ApprovalService) ruleFor(ctx context.Context, ownerID uuid.UUID) (approvalRule, error) {
+	g, err := s.groupRepo.GetApproverGroup(ctx, ownerID)
+	if err != nil {
+		if errors.Is(err, errs.ErrRecordNotFound) {
+			return approvalRule{min: defaultMinApprovals}, nil
+		}
+		return approvalRule{}, err
+	}
+	return approvalRule{min: g.MinApprovals, members: g.MemberIDs()}, nil
+}
+
+const defaultMinApprovals = 1
 
 // decide — общая часть всех трёх решений: проверки и запись решения.
 func (s *ApprovalService) decide(
@@ -1270,26 +1980,34 @@ func (s *ApprovalService) decide(
 	actor models.Actor,
 	status models.ApprovalStatus,
 	comment string,
-) (models.Experiment, error) {
+) (models.Experiment, approvalRule, error) {
 	e, err := s.experimentRepo.GetExperimentByID(ctx, experimentID)
 	if err != nil {
 		if errors.Is(err, errs.ErrRecordNotFound) {
-			return models.Experiment{}, errs.ErrExperimentNotFound
+			return models.Experiment{}, approvalRule{}, errs.ErrExperimentNotFound
 		}
-		return models.Experiment{}, err
+		return models.Experiment{}, approvalRule{}, err
 	}
 	if e.Status != models.ExperimentStatusReview {
-		return models.Experiment{}, errs.ErrInvalidTransition
+		return models.Experiment{}, approvalRule{}, errs.ErrInvalidTransition
 	}
 	if e.OwnerID == actor.ID {
-		return models.Experiment{}, errs.ErrPermissionDenied // нельзя согласовывать своё
+		return models.Experiment{}, approvalRule{}, errs.ErrPermissionDenied
 	}
-	if err := s.approvalRepo.RecordDecision(
-		ctx, e.ID, actor.ID, e.Version, status, comment,
-	); err != nil {
-		return models.Experiment{}, err
+
+	rule, err := s.ruleFor(ctx, e.OwnerID)
+	if err != nil {
+		return models.Experiment{}, approvalRule{}, err
 	}
-	return e, nil
+	// есть группа: решать могут только её участники
+	if rule.members != nil && !slices.Contains(rule.members, actor.ID) {
+		return models.Experiment{}, approvalRule{}, errs.ErrNotInApproverGroup
+	}
+
+	if err := s.approvalRepo.RecordDecision(ctx, e.ID, actor.ID, e.Version, status, comment); err != nil {
+		return models.Experiment{}, approvalRule{}, err
+	}
+	return e, rule, nil
 }
 
 // Approve — одобрение. Когда одобрений набралось достаточно,
@@ -1301,16 +2019,16 @@ func (s *ApprovalService) Approve(
 	comment string,
 ) error {
 
-	e, err := s.decide(ctx, experimentID, actor, models.ApprovalApproved, comment)
+	e, rule, err := s.decide(ctx, experimentID, actor, models.ApprovalApproved, comment)
 	if err != nil {
 		return err
 	}
 
-	n, err := s.approvalRepo.CountApproved(ctx, e.ID, e.Version, nil)
+	n, err := s.approvalRepo.CountApproved(ctx, e.ID, e.Version, rule.members)
 	if err != nil {
 		return err
 	}
-	if n < defaultMinApprovals {
+	if n < rule.min {
 		return nil
 	}
 
@@ -1333,7 +2051,7 @@ func (s *ApprovalService) Reject(
 	if comment == "" {
 		return errs.ErrCommentRequired
 	}
-	e, err := s.decide(ctx, experimentID, actor, models.ApprovalRejected, comment)
+	e, _, err := s.decide(ctx, experimentID, actor, models.ApprovalRejected, comment)
 	if err != nil {
 		return err
 	}
@@ -1350,7 +2068,7 @@ func (s *ApprovalService) RequestChanges(
 	if comment == "" {
 		return errs.ErrCommentRequired
 	}
-	e, err := s.decide(ctx, experimentID, actor, models.ApprovalChangesNeeded, comment)
+	e, _, err := s.decide(ctx, experimentID, actor, models.ApprovalChangesNeeded, comment)
 	if err != nil {
 		return err
 	}
@@ -1404,26 +2122,38 @@ import (
 type Action string
 
 const (
-	ActionSubmit  Action = "submit"
-	ActionRework  Action = "rework"
-	ActionStart   Action = "start"
-	ActionPause   Action = "pause"
-	ActionResume  Action = "resume"
+	ActionSubmit   Action = "submit"
+	ActionRework   Action = "rework"
+	ActionStart    Action = "start"
+	ActionPause    Action = "pause"
+	ActionResume   Action = "resume"
+	ActionComplete Action = "complete"
+
 	ActionArchive Action = "archive"
 )
 
 type transitionRule struct {
-	from, to models.ExperimentStatus
+	from []models.ExperimentStatus
+	to   models.ExperimentStatus
 }
 
-// Единственное место, где описаны допустимые переходы.
+func (r transitionRule) allows(s models.ExperimentStatus) bool {
+	for _, f := range r.from {
+		if f == s {
+			return true
+		}
+	}
+	return false
+}
+
 var transitionRules = map[Action]transitionRule{
-	ActionSubmit:  {from: models.ExperimentStatusDraft, to: models.ExperimentStatusReview},
-	ActionRework:  {from: models.ExperimentStatusRejected, to: models.ExperimentStatusDraft},
-	ActionStart:   {from: models.ExperimentStatusApproved, to: models.ExperimentStatusRunning},
-	ActionPause:   {from: models.ExperimentStatusRunning, to: models.ExperimentStatusPaused},
-	ActionResume:  {from: models.ExperimentStatusPaused, to: models.ExperimentStatusRunning},
-	ActionArchive: {from: models.ExperimentStatusCompleted, to: models.ExperimentStatusArchived},
+	ActionSubmit:   {from: []models.ExperimentStatus{models.ExperimentStatusDraft}, to: models.ExperimentStatusReview},
+	ActionRework:   {from: []models.ExperimentStatus{models.ExperimentStatusRejected}, to: models.ExperimentStatusDraft},
+	ActionStart:    {from: []models.ExperimentStatus{models.ExperimentStatusApproved}, to: models.ExperimentStatusRunning},
+	ActionPause:    {from: []models.ExperimentStatus{models.ExperimentStatusRunning}, to: models.ExperimentStatusPaused},
+	ActionResume:   {from: []models.ExperimentStatus{models.ExperimentStatusPaused}, to: models.ExperimentStatusRunning},
+	ActionComplete: {from: []models.ExperimentStatus{models.ExperimentStatusRunning, models.ExperimentStatusPaused}, to: models.ExperimentStatusCompleted},
+	ActionArchive:  {from: []models.ExperimentStatus{models.ExperimentStatusCompleted, models.ExperimentStatusRejected}, to: models.ExperimentStatusArchived},
 }
 
 func (s *ExperimentService) Transition(
@@ -1444,19 +2174,17 @@ func (s *ExperimentService) Transition(
 	if e.OwnerID != actor.ID && !actor.IsAdmin() {
 		return models.Experiment{}, errs.ErrPermissionDenied
 	}
-	if e.Status != rule.from {
+	if !rule.allows(e.Status) {
 		return models.Experiment{}, errs.ErrInvalidTransition
 	}
 
-	// на ревью уходит только корректная конфигурация
 	if action == ActionSubmit {
 		if err := s.validateForReview(ctx, e); err != nil {
 			return models.Experiment{}, err
 		}
 	}
 
-	if err := s.experimentRepo.TransitionStatus(ctx, e.ID, rule.from, rule.to); err != nil {
-		// сработал частичный уникальный индекс: на флаге уже есть активный эксперимент
+	if err := s.experimentRepo.TransitionStatus(ctx, e.ID, e.Status, rule.to); err != nil {
 		if action == ActionStart && errors.Is(err, errs.ErrDuplicateEntry) {
 			return models.Experiment{}, errs.ErrActiveExperimentExists
 		}
@@ -1633,9 +2361,10 @@ package service
 import (
 	"AB_system/internal/domain/models"
 	"AB_system/internal/domain/repository"
-	service "AB_system/internal/domain/service/input"
+	"AB_system/internal/domain/service/input"
 	"AB_system/pkg/errs"
 	"context"
+	"fmt"
 	"github.com/google/uuid"
 )
 
@@ -1668,7 +2397,7 @@ func (s *UserService) CreateUser(ctx context.Context, user models.User) (*models
 	}
 	return s.userRepo.CreateUser(ctx, &user)
 }
-func (s *UserService) UpdateUser(ctx context.Context, ID uuid.UUID, in service.UpdateUserInput) (*models.User, error) {
+func (s *UserService) UpdateUser(ctx context.Context, ID uuid.UUID, in input.UpdateUserInput) (*models.User, error) {
 	exists, err := s.userRepo.ExistsUser(ctx, ID)
 	if err != nil {
 		return nil, err
@@ -1695,7 +2424,7 @@ func (s *UserService) UpdateUser(ctx context.Context, ID uuid.UUID, in service.U
 			return nil, err
 		}
 		if !exists {
-			return nil, errs.ErrRoleNotFound
+			return nil, fmt.Errorf("%w: роль не найдена", errs.ErrInvalidField)
 		}
 		u.RoleID = *in.RoleID
 
@@ -1709,23 +2438,9 @@ func (s *UserService) UpdateUser(ctx context.Context, ID uuid.UUID, in service.U
 	return &u, nil
 }
 func (s *UserService) DeleteUser(ctx context.Context, userID uuid.UUID) error {
-	if userID == uuid.Nil {
-		return errs.ErrIdIsEmpty
-	}
-	exists, err := s.userRepo.ExistsUser(ctx, userID)
-	if err != nil {
-		return err
-	}
-	if !exists {
-		return errs.ErrUserNotFound
-	}
-	if err := s.userRepo.UpdateUser(ctx, &models.User{
-		ID:       userID,
-		IsActive: false,
-	}); err != nil {
-		return err
-	}
-	return nil
+	off := false
+	_, err := s.UpdateUser(ctx, userID, input.UpdateUserInput{IsActive: &off})
+	return err
 }
 func (s *UserService) GetUserByID(ctx context.Context, userID uuid.UUID) (models.User, error) {
 	if userID == uuid.Nil {
@@ -1988,6 +2703,37 @@ func NewApprovalResponse(a models.ExperimentApproval) ApprovalResponse {
 
 
 ================================================================================
+ФАЙЛ: C:\Users\Karimi\GolandProjects\AB_system\internal\http\dto\approver_groups.go
+================================================================================
+package dto
+
+import (
+	"AB_system/internal/domain/models"
+
+	"github.com/google/uuid"
+)
+
+type SetApproverGroupRequest struct {
+	ApproverIDs  []uuid.UUID `json:"approver_ids" binding:"required,min=1"`
+	MinApprovals int         `json:"min_approvals" binding:"required,gte=1"`
+}
+
+type ApproverGroupResponse struct {
+	ExperimenterID uuid.UUID   `json:"experimenter_id"`
+	ApproverIDs    []uuid.UUID `json:"approver_ids"`
+	MinApprovals   int         `json:"min_approvals"`
+}
+
+func NewApproverGroupResponse(g models.ApproverGroup) ApproverGroupResponse {
+	return ApproverGroupResponse{
+		ExperimenterID: g.ExperimenterID,
+		ApproverIDs:    g.MemberIDs(),
+		MinApprovals:   g.MinApprovals,
+	}
+}
+
+
+================================================================================
 ФАЙЛ: C:\Users\Karimi\GolandProjects\AB_system\internal\http\dto\experiment.go
 ================================================================================
 package dto
@@ -1995,6 +2741,7 @@ package dto
 import (
 	"AB_system/internal/domain/models"
 	"AB_system/internal/domain/service/input"
+	"encoding/json"
 	"github.com/google/uuid"
 	"time"
 )
@@ -2070,20 +2817,24 @@ func (r UpdateExperimentRequest) ToInput() input.UpdateExperimentInput {
 	}
 	return in
 }
-func ToVariantModels(in []input.VariantInput) []models.ExperimentVariant {
-	res := make([]models.ExperimentVariant, 0, len(in))
-	for _, v := range in {
-		res = append(res, models.ExperimentVariant{
-			Name: v.Name, Value: v.Value, Weight: v.WeightBP, IsControl: v.IsControl,
-		})
-	}
-	return res
-}
 
 type UpdateExperimentRequest struct {
 	Name       string           `json:"name" binding:"required,max=255"`
 	AudienceBP int              `json:"audience_bp" binding:"required,gt=0,lte=10000"`
 	Variants   []VariantRequest `json:"variants" binding:"required,min=1,max=20,dive"`
+}
+type VersionResponse struct {
+	Version   int             `json:"version"`
+	Snapshot  json.RawMessage `json:"snapshot"`
+	CreatedAt time.Time       `json:"created_at"`
+}
+
+func NewVersionResponse(v models.ExperimentVersion) VersionResponse {
+	return VersionResponse{
+		Version:   v.Version,
+		Snapshot:  json.RawMessage(v.Snapshot),
+		CreatedAt: v.CreatedAt,
+	}
 }
 
 
@@ -2273,6 +3024,71 @@ func (h *ApprovalHandler) List(c *gin.Context) {
 
 
 ================================================================================
+ФАЙЛ: C:\Users\Karimi\GolandProjects\AB_system\internal\http\handlers\approver_groups.go
+================================================================================
+package handler
+
+import (
+	"AB_system/internal/domain/models"
+	"AB_system/internal/domain/service"
+	"AB_system/internal/http/dto"
+	"AB_system/internal/http/middlewares"
+	"net/http"
+
+	"github.com/gin-gonic/gin"
+)
+
+type ApproverGroupHandler struct {
+	svc *service.ApproverGroupService
+}
+
+func NewApproverGroupHandler(svc *service.ApproverGroupService) *ApproverGroupHandler {
+	return &ApproverGroupHandler{svc: svc}
+}
+
+func (h *ApproverGroupHandler) Register(r *gin.RouterGroup) {
+	g := r.Group("/approver-groups")
+	g.PUT("/:experimenter_id", middlewares.RequireRole(models.RoleAdmin), h.Set)
+	g.GET("/:experimenter_id", middlewares.RequireRole(models.RoleAdmin, models.RoleExperimenter), h.Get)
+}
+
+func (h *ApproverGroupHandler) Set(c *gin.Context) {
+	id, ok := parseUUID(c, "experimenter_id")
+	if !ok {
+		return
+	}
+	var req dto.SetApproverGroupRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		writeBadRequest(c, err)
+		return
+	}
+	g, err := h.svc.Set(c.Request.Context(), id, req.ApproverIDs, req.MinApprovals)
+	if err != nil {
+		writeError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, dto.NewApproverGroupResponse(g))
+}
+
+func (h *ApproverGroupHandler) Get(c *gin.Context) {
+	id, ok := parseUUID(c, "experimenter_id")
+	if !ok {
+		return
+	}
+	actor, ok := currentActor(c)
+	if !ok {
+		return
+	}
+	g, err := h.svc.Get(c.Request.Context(), actor, id)
+	if err != nil {
+		writeError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, dto.NewApproverGroupResponse(g))
+}
+
+
+================================================================================
 ФАЙЛ: C:\Users\Karimi\GolandProjects\AB_system\internal\http\handlers\common.go
 ================================================================================
 package handler
@@ -2283,7 +3099,6 @@ import (
 	"AB_system/internal/http/observability"
 	"AB_system/pkg/errs"
 	"errors"
-	"log/slog"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -2293,12 +3108,7 @@ import (
 func writeError(c *gin.Context, err error) {
 	ctx := c.Request.Context()
 	status, msg := mapError(err)
-	if status >= http.StatusInternalServerError {
-		slog.ErrorContext(ctx, "internal error",
-			"err", err,
-			"trace_id", observability.GetTraceID(ctx),
-		)
-	}
+	_ = c.Error(err) // RequestLogger запишет ошибку в лог после обработки запроса
 	c.JSON(status, gin.H{
 		"error":    msg,
 		"trace_id": observability.GetTraceID(ctx),
@@ -2306,6 +3116,7 @@ func writeError(c *gin.Context, err error) {
 }
 
 func writeBadRequest(c *gin.Context, err error) {
+	_ = c.Error(err)
 	c.JSON(http.StatusBadRequest, gin.H{
 		"error":    err.Error(),
 		"trace_id": observability.GetTraceID(c.Request.Context()),
@@ -2318,6 +3129,7 @@ func mapError(err error) (int, string) {
 		errors.Is(err, errs.ErrUserNotFound),
 		errors.Is(err, errs.ErrRoleNotFound),
 		errors.Is(err, errs.ErrExperimentNotFound),
+		errors.Is(err, errs.ErrVersionNotFound),
 		errors.Is(err, errs.ErrRecordNotFound):
 		return http.StatusNotFound, err.Error()
 
@@ -2329,7 +3141,8 @@ func mapError(err error) (int, string) {
 		errors.Is(err, errs.ErrInvalidTransition):
 		return http.StatusConflict, err.Error()
 
-	case errors.Is(err, errs.ErrPermissionDenied):
+	case errors.Is(err, errs.ErrPermissionDenied),
+		errors.Is(err, errs.ErrNotInApproverGroup):
 		return http.StatusForbidden, err.Error()
 
 	case errors.Is(err, errs.ErrKeyIsEmpty),
@@ -2344,6 +3157,7 @@ func mapError(err error) (int, string) {
 		errors.Is(err, errs.ErrExperimentVariantsEmpty),
 		errors.Is(err, errs.ErrWeightsSumMismatch),
 		errors.Is(err, errs.ErrCommentRequired),
+		errors.Is(err, errs.ErrInvalidApproverGroup),
 		errors.Is(err, errs.ErrControlVariantCount):
 		return http.StatusBadRequest, err.Error()
 
@@ -2384,8 +3198,10 @@ import (
 	"AB_system/internal/domain/service"
 	"AB_system/internal/http/dto"
 	"AB_system/internal/http/middlewares"
+	"AB_system/pkg/errs"
 	"github.com/gin-gonic/gin"
 	"net/http"
+	"strconv"
 )
 
 type ExperimentHandler struct {
@@ -2404,6 +3220,8 @@ func (h *ExperimentHandler) Register(r *gin.RouterGroup) {
 	g.POST("", write, h.Create)
 	g.GET("", h.List)
 	g.GET("/:id", h.Get)
+	g.GET("/:id/versions", h.Versions)
+	g.GET("/:id/versions/:version", h.Version)
 	g.PUT("/:id", write, h.Update)
 
 	g.POST("/:id/submit", write, h.transition(service.ActionSubmit))
@@ -2411,6 +3229,7 @@ func (h *ExperimentHandler) Register(r *gin.RouterGroup) {
 	g.POST("/:id/start", write, h.transition(service.ActionStart))
 	g.POST("/:id/pause", write, h.transition(service.ActionPause))
 	g.POST("/:id/resume", write, h.transition(service.ActionResume))
+	g.POST("/:id/complete", write, h.transition(service.ActionComplete))
 	g.POST("/:id/archive", write, h.transition(service.ActionArchive))
 }
 
@@ -2501,6 +3320,40 @@ func (h *ExperimentHandler) Update(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, dto.NewExperimentResponse(&e))
+}
+func (h *ExperimentHandler) Versions(c *gin.Context) {
+	id, ok := parseUUID(c, "id")
+	if !ok {
+		return
+	}
+	list, err := h.svc.GetVersions(c.Request.Context(), id)
+	if err != nil {
+		writeError(c, err)
+		return
+	}
+	res := make([]dto.VersionResponse, 0, len(list))
+	for _, v := range list {
+		res = append(res, dto.NewVersionResponse(v))
+	}
+	c.JSON(http.StatusOK, res)
+}
+
+func (h *ExperimentHandler) Version(c *gin.Context) {
+	id, ok := parseUUID(c, "id")
+	if !ok {
+		return
+	}
+	n, err := strconv.Atoi(c.Param("version"))
+	if err != nil || n < 1 {
+		writeError(c, errs.ErrInvalidField)
+		return
+	}
+	v, err := h.svc.GetVersion(c.Request.Context(), id, n)
+	if err != nil {
+		writeError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, dto.NewVersionResponse(v))
 }
 
 
@@ -2845,6 +3698,7 @@ func ActorFrom(c *gin.Context) (models.Actor, bool) {
 }
 
 func deny(c *gin.Context, status int, msg string) {
+	_ = c.Error(errors.New(msg))
 	c.AbortWithStatusJSON(status, gin.H{
 		"error":    msg,
 		"trace_id": observability.GetTraceID(c.Request.Context()),
@@ -2881,18 +3735,103 @@ func TraceID() gin.HandlerFunc {
 }
 
 // RequestLogger пишет одну JSON-строку на каждый запрос.
+// Уровень зависит от статуса: 5xx — error, 4xx — warn, остальное — info.
+// Если хендлер приложил ошибку (c.Error), её текст попадает в поле err.
 func RequestLogger() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		start := time.Now()
 		c.Next()
+
 		ctx := c.Request.Context()
-		slog.InfoContext(ctx, "http request",
-			"method", c.Request.Method,
-			"path", c.FullPath(),
-			"status", c.Writer.Status(),
-			"duration_ms", time.Since(start).Milliseconds(),
-			"trace_id", observability.GetTraceID(ctx),
-		)
+		status := c.Writer.Status()
+
+		level := slog.LevelInfo
+		switch {
+		case status >= 500:
+			level = slog.LevelError
+		case status >= 400:
+			level = slog.LevelWarn
+		}
+
+		attrs := []slog.Attr{
+			slog.String("method", c.Request.Method),
+			slog.String("path", c.FullPath()),
+			slog.Int("status", status),
+			slog.Int64("duration_ms", time.Since(start).Milliseconds()),
+			slog.String("trace_id", observability.GetTraceID(ctx)),
+		}
+		if actor, ok := ActorFrom(c); ok {
+			attrs = append(attrs, slog.String("user_id", actor.ID.String()))
+		}
+		if last := c.Errors.Last(); last != nil {
+			attrs = append(attrs, slog.String("err", last.Err.Error()))
+		}
+		slog.LogAttrs(ctx, level, "http request", attrs...)
+	}
+}
+
+
+================================================================================
+ФАЙЛ: C:\Users\Karimi\GolandProjects\AB_system\internal\http\middlewares\request_logger_test.go
+================================================================================
+package middlewares
+
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"log/slog"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+
+	"github.com/gin-gonic/gin"
+)
+
+func TestRequestLoggerWritesErrors(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+
+	var buf bytes.Buffer
+	prev := slog.Default()
+	slog.SetDefault(slog.New(slog.NewJSONHandler(&buf, nil)))
+	t.Cleanup(func() { slog.SetDefault(prev) })
+
+	r := gin.New()
+	r.Use(TraceID(), RequestLogger())
+	r.GET("/ok", func(c *gin.Context) { c.Status(http.StatusOK) })
+	r.GET("/conflict", func(c *gin.Context) {
+		_ = c.Error(errors.New("недопустимый переход статуса"))
+		c.Status(http.StatusConflict)
+	})
+	r.GET("/boom", func(c *gin.Context) {
+		_ = c.Error(errors.New("db down"))
+		c.Status(http.StatusInternalServerError)
+	})
+
+	cases := []struct {
+		path, level, err string
+	}{
+		{"/ok", "INFO", ""},
+		{"/conflict", "WARN", "недопустимый переход статуса"},
+		{"/boom", "ERROR", "db down"},
+	}
+	for _, tc := range cases {
+		buf.Reset()
+		r.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(http.MethodGet, tc.path, nil))
+
+		var rec map[string]any
+		if err := json.Unmarshal(buf.Bytes(), &rec); err != nil {
+			t.Fatalf("%s: bad log line %q: %v", tc.path, buf.String(), err)
+		}
+		if rec["level"] != tc.level {
+			t.Errorf("%s: level = %v, want %s", tc.path, rec["level"], tc.level)
+		}
+		if got, _ := rec["err"].(string); got != tc.err {
+			t.Errorf("%s: err = %q, want %q", tc.path, got, tc.err)
+		}
+		if rec["trace_id"] == "" || rec["trace_id"] == nil {
+			t.Errorf("%s: no trace_id", tc.path)
+		}
 	}
 }
 
@@ -3034,6 +3973,78 @@ func TranslateGormError(err error) error {
 
 func isForeignKeyViolation(err error) bool {
 	return strings.Contains(err.Error(), "violates foreign key constraint")
+}
+
+
+================================================================================
+ФАЙЛ: C:\Users\Karimi\GolandProjects\AB_system\internal\repository\postgres\approver.go
+================================================================================
+package postgres
+
+import (
+	"AB_system/internal/domain/models"
+	"AB_system/internal/repository"
+	"context"
+	"errors"
+
+	"github.com/google/uuid"
+	"gorm.io/gorm"
+)
+
+type ApproverGroupRepository struct {
+	db *gorm.DB
+}
+
+func NewApproverGroupRepository(db *gorm.DB) *ApproverGroupRepository {
+	return &ApproverGroupRepository{db: db}
+}
+
+func (r *ApproverGroupRepository) GetApproverGroup(
+	ctx context.Context, experimenterID uuid.UUID,
+) (models.ApproverGroup, error) {
+	const op = "GetApproverGroup"
+	var g models.ApproverGroup
+	err := r.db.WithContext(ctx).
+		Preload("Members").
+		First(&g, "experimenter_id = ?", experimenterID).Error
+	if err := repository.CheckError(ctx, op, err); err != nil {
+		return models.ApproverGroup{}, err
+	}
+	return g, nil
+}
+
+func (r *ApproverGroupRepository) SaveApproverGroup(
+	ctx context.Context, g *models.ApproverGroup,
+) error {
+	const op = "SaveApproverGroup"
+	err := r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		var cur models.ApproverGroup
+		err := tx.First(&cur, "experimenter_id = ?", g.ExperimenterID).Error
+		switch {
+		case err == nil: // группа есть: меняем порог, старый состав удаляем
+			g.ID = cur.ID
+			if err := tx.Model(&cur).Update("min_approvals", g.MinApprovals).Error; err != nil {
+				return err
+			}
+			if err := tx.Delete(&models.ApproverGroupMember{}, "group_id = ?", cur.ID).Error; err != nil {
+				return err
+			}
+		case errors.Is(err, gorm.ErrRecordNotFound): // группы нет: создаём
+			if err := tx.Omit("Members").Create(g).Error; err != nil {
+				return err
+			}
+		default:
+			return err
+		}
+
+		members := make([]models.ApproverGroupMember, 0, len(g.Members))
+		for _, m := range g.Members {
+			members = append(members, models.ApproverGroupMember{GroupID: g.ID, ApproverID: m.ApproverID})
+		}
+		g.Members = members
+		return tx.Create(&members).Error
+	})
+	return repository.CheckError(ctx, op, err)
 }
 
 
@@ -3304,6 +4315,39 @@ func (r *ExperimentRepository) TransitionStatus(
 		return errs.ErrInvalidTransition
 	}
 	return nil
+}
+func (r *ExperimentRepository) ListVersions(
+	ctx context.Context,
+	experimentID uuid.UUID,
+) ([]models.ExperimentVersion, error) {
+	const op = "ListVersions"
+	var result []models.ExperimentVersion
+	err := r.db.WithContext(ctx).
+		Model(&models.ExperimentVersion{}).
+		Where("experiment_id = ?", experimentID).
+		Order("version ASC").
+		Find(&result).Error
+	if err := repository.CheckError(ctx, op, err); err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+func (r *ExperimentRepository) GetVersion(ctx context.Context,
+	experimentID uuid.UUID,
+	version int,
+) (models.ExperimentVersion, error) {
+	const op = "GetVersion"
+	var result models.ExperimentVersion
+	err := r.db.WithContext(ctx).
+		Model(&models.ExperimentVersion{}).
+		Where("experiment_id = ? AND version = ?", experimentID, version).
+		First(&result).Error
+	if err := repository.CheckError(ctx, op, err); err != nil {
+		return models.ExperimentVersion{}, err
+
+	}
+	return result, nil
 }
 
 
@@ -3613,17 +4657,29 @@ func (s *Server) Shutdown(ctx context.Context) error {
 package logger
 
 import (
+	"io"
 	"log/slog"
 	"os"
+	"path/filepath"
 )
 
+const logFile = ".logs/app.log"
+
+// Init пишет JSON-логи в stdout и, если получится открыть файл, ещё и в .logs/app.log.
 func Init(level string) {
 	var lvl slog.Level
 	if err := lvl.UnmarshalText([]byte(level)); err != nil {
 		lvl = slog.LevelInfo
 	}
-	h := slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: lvl})
-	slog.SetDefault(slog.New(h))
+
+	var w io.Writer = os.Stdout
+	if err := os.MkdirAll(filepath.Dir(logFile), 0o755); err == nil {
+		f, err := os.OpenFile(logFile, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0o644)
+		if err == nil {
+			w = io.MultiWriter(os.Stdout, f)
+		}
+	}
+	slog.SetDefault(slog.New(slog.NewJSONHandler(w, &slog.HandlerOptions{Level: lvl})))
 }
 
 
@@ -3708,6 +4764,8 @@ func Migrate(dbConn *gorm.DB) error {
 		&models.ExperimentVariant{},
 		&models.ExperimentApproval{},
 		&models.ExperimentVersion{},
+		&models.ApproverGroup{},
+		&models.ApproverGroupMember{},
 	}
 	for _, table := range tables {
 		if err := dbConn.AutoMigrate(table); err != nil {
@@ -3755,9 +4813,10 @@ func SeedAdmin(db *gorm.DB) error {
 	}
 
 	admin := models.User{
-		Email:  "firuzz.7@gmail.com",
-		Name:   "Firuz",
-		RoleID: a.ID,
+		Email:    "firuzz.7@gmail.com",
+		Name:     "Firuz",
+		RoleID:   a.ID,
+		IsActive: true,
 	}
 	if err := db.Where("email", admin.Email).FirstOrCreate(&admin).Error; err != nil {
 		return repository.TranslateGormError(err)
@@ -3796,13 +4855,9 @@ var (
 	ErrControlVariantCount     = errors.New("experiment must have exactly one control variant")
 	ErrCommentRequired         = errors.New("comment is required")
 	ErrActiveExperimentExists  = errors.New("на этом флаге уже есть запущенный или приостановленный эксперимент")
-)
-var (
-	ErrExperimentVariantNotFound     = errors.New("experiment variant not found")
-	ErrExperimentVariantWeightIsNil  = errors.New("experiment variant weight is nil")
-	ErrExperimentVariantValueIsEmpty = errors.New("experiment variant value is empty")
-	ErrExperimentVariantNameIsEmpty  = errors.New("experiment variant name is empty")
-	ErrExperimentIDIsNil             = errors.New("experiment id is nil")
+	ErrVersionNotFound         = errors.New("версия эксперимента не найдена")
+	ErrInvalidApproverGroup    = errors.New("некорректная группа согласующих")
+	ErrNotInApproverGroup      = errors.New("вы не входите в группу согласующих владельца эксперимента")
 )
 
 
