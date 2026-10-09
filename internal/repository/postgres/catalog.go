@@ -156,3 +156,16 @@ func (r *MetricRepository) ArchiveMetric(ctx context.Context, id uuid.UUID) erro
 		Update("archived_at", time.Now())
 	return repository.CheckError(ctx, op, res.Error)
 }
+
+func (r *EventTypeRepository) GetEventTypesByKeys(ctx context.Context, keys []string) ([]models.EventType, error) {
+	const op = "GetEventTypesByKeys"
+	var res []models.EventType
+	if len(keys) == 0 {
+		return res, nil
+	}
+	err := r.db.WithContext(ctx).Where("key IN ?", keys).Find(&res).Error
+	if err := repository.CheckError(ctx, op, err); err != nil {
+		return nil, err
+	}
+	return res, nil
+}

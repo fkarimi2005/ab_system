@@ -39,6 +39,7 @@ func mapError(err error) (int, string) {
 		errors.Is(err, errs.ErrVersionNotFound),
 		errors.Is(err, errs.ErrEventTypeNotFound),
 		errors.Is(err, errs.ErrMetricNotFound),
+		errors.Is(err, errs.ErrDecisionNotFound),
 		errors.Is(err, errs.ErrRecordNotFound):
 		return http.StatusNotFound, err.Error()
 

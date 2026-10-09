@@ -20,6 +20,7 @@ var (
 	ErrInvalidMetric           = errors.New("некорректная метрика")
 	ErrInvalidExperimentConfig = errors.New("некорректная конфигурация метрик или guardrails эксперимента")
 	ErrNoTargetMetric          = errors.New("у эксперимента должна быть хотя бы одна целевая метрика")
+	ErrDecisionNotFound        = errors.New("решение не найдено")
 	ErrInvalidApproverGroup    = errors.New("некорректная группа согласующих")
 	ErrNotInApproverGroup      = errors.New("вы не входите в группу согласующих владельца эксперимента")
 )

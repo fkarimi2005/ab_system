@@ -6,8 +6,10 @@ import (
 	"AB_system/internal/domain/targeting"
 	"AB_system/pkg/errs"
 	"context"
+	"encoding/json"
 	"errors"
 	"log/slog"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -28,13 +30,20 @@ type runningExperimentFinder interface {
 	GetRunningExperimentByFlagID(ctx context.Context, flagID uuid.UUID) (models.Experiment, error)
 }
 
+// decisionRecorder сохраняет решения, чтобы события могли ссылаться на decision_id.
+type decisionRecorder interface {
+	RecordDecisions(ctx context.Context, decisions []models.Decision) error
+}
+
 type DecideService struct {
 	flags       flagByKeyFinder
 	experiments runningExperimentFinder
+	recorder    decisionRecorder
+	now         func() time.Time
 }
 
-func NewDecideService(flags flagByKeyFinder, experiments runningExperimentFinder) *DecideService {
-	return &DecideService{flags: flags, experiments: experiments}
+func NewDecideService(flags flagByKeyFinder, experiments runningExperimentFinder, recorder decisionRecorder) *DecideService {
+	return &DecideService{flags: flags, experiments: experiments, recorder: recorder, now: time.Now}
 }
 
 type DecideInput struct {
@@ -56,23 +65,31 @@ type DecideItem struct {
 // Decide возвращает решение по каждому запрошенному флагу, в порядке запроса.
 func (s *DecideService) Decide(ctx context.Context, in DecideInput) ([]DecideItem, error) {
 	items := make([]DecideItem, 0, len(in.FlagKeys))
+	var decisions []models.Decision
 	for _, key := range in.FlagKeys {
-		item, err := s.decideOne(ctx, in, key)
+		item, rec, err := s.decideOne(ctx, in, key)
 		if err != nil {
 			return nil, err
 		}
 		items = append(items, item)
+		if rec != nil {
+			decisions = append(decisions, *rec)
+		}
+	}
+	// решения записываем до ответа: клиент пришлёт события с этим decision_id
+	if err := s.recorder.RecordDecisions(ctx, decisions); err != nil {
+		return nil, err
 	}
 	return items, nil
 }
 
-func (s *DecideService) decideOne(ctx context.Context, in DecideInput, key string) (DecideItem, error) {
+func (s *DecideService) decideOne(ctx context.Context, in DecideInput, key string) (DecideItem, *models.Decision, error) {
 	flag, err := s.flags.GetFeatureFlagByKey(ctx, key)
 	if err != nil {
 		if errors.Is(err, errs.ErrRecordNotFound) {
-			return DecideItem{FlagKey: key, Source: SourceUnknownFlag}, nil
+			return DecideItem{FlagKey: key, Source: SourceUnknownFlag}, nil, nil
 		}
-		return DecideItem{}, err
+		return DecideItem{}, nil, err
 	}
 
 	def := DecideItem{FlagKey: key, Value: &flag.DefaultValue, ValueType: flag.ValueType, Source: SourceDefault}
@@ -80,24 +97,34 @@ func (s *DecideService) decideOne(ctx context.Context, in DecideInput, key strin
 	exp, err := s.experiments.GetRunningExperimentByFlagID(ctx, flag.ID)
 	if err != nil {
 		if errors.Is(err, errs.ErrRecordNotFound) {
-			return def, nil // активного эксперимента нет
+			return def, nil, nil // активного эксперимента нет
 		}
-		return DecideItem{}, err
+		return DecideItem{}, nil, err
 	}
 
 	if !matchesTargeting(ctx, exp, in.Attributes) {
-		return def, nil
+		return def, nil, nil
 	}
 
 	bucket := decision.Bucket(exp.ID, in.SubjectID)
 	variant, ok := decision.Select(exp.Variants, exp.AudienceBP, bucket)
 	if !ok {
-		return def, nil // вне аудитории эксперимента
+		return def, nil, nil // вне аудитории эксперимента
 	}
 
 	decisionID := decision.ID(exp.ID, exp.Version, in.SubjectID, key)
 	expID := exp.ID
 	value := variant.Value
+
+	var attrs json.RawMessage
+	if len(in.Attributes) > 0 {
+		attrs, _ = json.Marshal(in.Attributes)
+	}
+	rec := &models.Decision{
+		DecisionID: decisionID, ExperimentID: exp.ID, ExperimentVersion: exp.Version,
+		FlagKey: key, SubjectID: in.SubjectID, Variant: variant.Name,
+		Attributes: attrs, DecidedAt: s.now().UTC(),
+	}
 	return DecideItem{
 		FlagKey:      key,
 		Value:        &value,
@@ -106,7 +133,7 @@ func (s *DecideService) decideOne(ctx context.Context, in DecideInput, key strin
 		DecisionID:   &decisionID,
 		ExperimentID: &expID,
 		Variant:      variant.Name,
-	}, nil
+	}, rec, nil
 }
 
 // matchesTargeting проверяет, подходит ли пользователь под правило эксперимента.
