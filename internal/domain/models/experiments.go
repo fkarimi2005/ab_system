@@ -25,7 +25,9 @@ type Experiment struct {
 	OwnerID uuid.UUID `json:"owner_id" gorm:"type:uuid;not null;index"`
 	User    User      `json:"-" gorm:"foreignKey:OwnerID;references:ID"`
 
-	Variants []ExperimentVariant `json:"variants" gorm:"foreignKey:ExperimentID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
+	Variants   []ExperimentVariant   `json:"variants" gorm:"foreignKey:ExperimentID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
+	Metrics    []ExperimentMetric    `json:"metrics" gorm:"foreignKey:ExperimentID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
+	Guardrails []ExperimentGuardrail `json:"guardrails" gorm:"foreignKey:ExperimentID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE"`
 
 	CreatedAt time.Time      `json:"created_at" gorm:"autoCreateTime"`
 	UpdatedAt time.Time      `json:"updated_at" gorm:"autoUpdateTime"`

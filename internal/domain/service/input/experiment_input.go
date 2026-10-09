@@ -19,11 +19,15 @@ type CreateExperimentInput struct {
 	AudienceBP    int
 	Variants      []VariantInput
 	Targeting     []byte // JSON-правило таргетинга; пусто или null — подходят все
+	Metrics       []MetricRefInput
+	Guardrails    []GuardrailInput
 }
 type UpdateExperimentInput struct {
 	Name       string
 	AudienceBP int
 	Targeting  []byte // JSON-правило таргетинга; пусто или null — подходят все
+	Metrics    []MetricRefInput
+	Guardrails []GuardrailInput
 	Variants   []VariantInput
 }
 
@@ -35,4 +39,19 @@ func ToVariantModels(in []VariantInput) []models.ExperimentVariant {
 		})
 	}
 	return res
+}
+
+// MetricRefInput — метрика эксперимента: из каталога и с ролью (target | diagnostic).
+type MetricRefInput struct {
+	MetricID uuid.UUID
+	Role     string
+}
+
+// GuardrailInput — автоматический предохранитель эксперимента.
+type GuardrailInput struct {
+	MetricID      uuid.UUID
+	Threshold     float64
+	Comparison    string // gt | lt
+	WindowSeconds int
+	Action        string // pause | revert_to_control
 }

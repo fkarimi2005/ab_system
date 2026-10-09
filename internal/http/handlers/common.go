@@ -37,6 +37,8 @@ func mapError(err error) (int, string) {
 		errors.Is(err, errs.ErrRoleNotFound),
 		errors.Is(err, errs.ErrExperimentNotFound),
 		errors.Is(err, errs.ErrVersionNotFound),
+		errors.Is(err, errs.ErrEventTypeNotFound),
+		errors.Is(err, errs.ErrMetricNotFound),
 		errors.Is(err, errs.ErrRecordNotFound):
 		return http.StatusNotFound, err.Error()
 
@@ -45,6 +47,7 @@ func mapError(err error) (int, string) {
 		errors.Is(err, errs.ErrConflict),
 		errors.Is(err, errs.ErrExperimentNotEditable),
 		errors.Is(err, errs.ErrActiveExperimentExists),
+		errors.Is(err, errs.ErrExposureTypeExists),
 		errors.Is(err, errs.ErrInvalidTransition):
 		return http.StatusConflict, err.Error()
 
@@ -66,6 +69,10 @@ func mapError(err error) (int, string) {
 		errors.Is(err, errs.ErrCommentRequired),
 		errors.Is(err, errs.ErrInvalidApproverGroup),
 		errors.Is(err, errs.ErrInvalidTargeting),
+		errors.Is(err, errs.ErrInvalidEventType),
+		errors.Is(err, errs.ErrInvalidMetric),
+		errors.Is(err, errs.ErrInvalidExperimentConfig),
+		errors.Is(err, errs.ErrNoTargetMetric),
 		errors.Is(err, errs.ErrControlVariantCount):
 		return http.StatusBadRequest, err.Error()
 

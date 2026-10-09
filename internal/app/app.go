@@ -46,7 +46,11 @@ func New(ctx context.Context, cfg configs.Config) (*App, error) {
 	userRepo := pgrepo.NewUserRepository(db)
 	userSvc := service.NewUserService(userRepo, roleRepo)
 	ExperimentRepo := pgrepo.NewExperimentRepository(db)
-	ExperimentSvc := service.NewExperimentService(ExperimentRepo, flagRepo)
+	eventTypeRepo := pgrepo.NewEventTypeRepository(db)
+	metricRepo := pgrepo.NewMetricRepository(db)
+	ExperimentSvc := service.NewExperimentService(ExperimentRepo, flagRepo, metricRepo)
+	eventTypeSvc := service.NewEventTypeService(eventTypeRepo)
+	metricSvc := service.NewMetricService(metricRepo, eventTypeRepo)
 	groupRepo := pgrepo.NewApproverGroupRepository(db)
 	groupSvc := service.NewApproverGroupService(groupRepo, userRepo)
 	approvalRepo := pgrepo.NewExperimentApprovalRepository(db)
@@ -62,6 +66,8 @@ func New(ctx context.Context, cfg configs.Config) (*App, error) {
 			handler.NewApprovalHandler(approvalSvc, ExperimentSvc),
 			handler.NewApproverGroupHandler(groupSvc),
 			handler.NewDecideHandler(decideSvc),
+			handler.NewEventTypeHandler(eventTypeSvc),
+			handler.NewMetricHandler(metricSvc),
 		},
 	},
 	)
