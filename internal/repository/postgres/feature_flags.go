@@ -93,3 +93,15 @@ func (r *FeatureFlagRepository) UpdateFeatureFlagsDefaultValue(
 	return nil
 
 }
+func (r *FeatureFlagRepository) GetFeatureFlagByKey(
+	ctx context.Context,
+	key string,
+) (models.FeatureFlag, error) {
+	const op = "GetFeatureFlagByKey"
+	var flag models.FeatureFlag
+	err := r.db.WithContext(ctx).Where("key = ?", key).First(&flag).Error
+	if err := repository.CheckError(ctx, op, err); err != nil {
+		return models.FeatureFlag{}, err
+	}
+	return flag, nil
+}

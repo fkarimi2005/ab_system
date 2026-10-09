@@ -188,3 +188,18 @@ func (r *ExperimentRepository) GetVersion(ctx context.Context,
 	}
 	return result, nil
 }
+func (r *ExperimentRepository) GetRunningExperimentByFlagID(
+	ctx context.Context,
+	flagID uuid.UUID,
+) (models.Experiment, error) {
+	const op = "GetRunningExperimentByFlagID"
+	var result models.Experiment
+	err := r.db.WithContext(ctx).
+		Preload("Variants").
+		Where("feature_flag_id = ? AND status = ?", flagID, models.ExperimentStatusRunning).
+		First(&result).Error
+	if err := repository.CheckError(ctx, op, err); err != nil {
+		return models.Experiment{}, err
+	}
+	return result, nil
+}
