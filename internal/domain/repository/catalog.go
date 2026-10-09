@@ -16,6 +16,8 @@ type EventTypeRepository interface {
 	ArchiveEventType(ctx context.Context, id uuid.UUID) error
 	// ActiveExposureTypeExists сообщает, есть ли неархивный тип показа.
 	ActiveExposureTypeExists(ctx context.Context) (bool, error)
+	// GetEventTypesByKeys возвращает найденные типы (в том числе архивные), ненайденные пропускает.
+	GetEventTypesByKeys(ctx context.Context, keys []string) ([]models.EventType, error)
 }
 
 type MetricRepository interface {

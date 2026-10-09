@@ -152,6 +152,9 @@ func (f *fakeEventTypes) ListEventTypes(context.Context, bool) ([]models.EventTy
 }
 func (f *fakeEventTypes) UpdateEventType(context.Context, *models.EventType) error { return nil }
 func (f *fakeEventTypes) ArchiveEventType(context.Context, uuid.UUID) error        { return nil }
+func (f *fakeEventTypes) GetEventTypesByKeys(context.Context, []string) ([]models.EventType, error) {
+	return nil, nil
+}
 func (f *fakeEventTypes) ActiveExposureTypeExists(context.Context) (bool, error) {
 	return f.exposureExists, nil
 }

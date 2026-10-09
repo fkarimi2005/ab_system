@@ -55,7 +55,10 @@ func New(ctx context.Context, cfg configs.Config) (*App, error) {
 	groupSvc := service.NewApproverGroupService(groupRepo, userRepo)
 	approvalRepo := pgrepo.NewExperimentApprovalRepository(db)
 	approvalSvc := service.NewApprovalService(ExperimentRepo, approvalRepo, groupRepo)
-	decideSvc := service.NewDecideService(flagRepo, ExperimentRepo)
+	decisionRepo := pgrepo.NewDecisionRepository(db)
+	eventRepo := pgrepo.NewEventRepository(db)
+	decideSvc := service.NewDecideService(flagRepo, ExperimentRepo, decisionRepo)
+	eventSvc := service.NewEventService(eventTypeRepo, decisionRepo, eventRepo)
 	engine := router.New(router.Deps{
 		Health: handler.NewHealthHandler(sqlDB),
 		Auth:   middlewares.Authenticate(userRepo),
@@ -66,6 +69,7 @@ func New(ctx context.Context, cfg configs.Config) (*App, error) {
 			handler.NewApprovalHandler(approvalSvc, ExperimentSvc),
 			handler.NewApproverGroupHandler(groupSvc),
 			handler.NewDecideHandler(decideSvc),
+			handler.NewEventHandler(eventSvc),
 			handler.NewEventTypeHandler(eventTypeSvc),
 			handler.NewMetricHandler(metricSvc),
 		},

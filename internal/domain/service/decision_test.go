@@ -22,6 +22,13 @@ func (f fakeFlags) GetFeatureFlagByKey(_ context.Context, key string) (models.Fe
 	return fl, nil
 }
 
+type fakeRecorder struct{ saved []models.Decision }
+
+func (f *fakeRecorder) RecordDecisions(_ context.Context, d []models.Decision) error {
+	f.saved = append(f.saved, d...)
+	return nil
+}
+
 type fakeExperiments map[uuid.UUID]models.Experiment // по id флага
 
 func (f fakeExperiments) GetRunningExperimentByFlagID(_ context.Context, id uuid.UUID) (models.Experiment, error) {
@@ -49,6 +56,7 @@ func newDecideFixture(audienceBP int, targetingRule string) (*DecideService, mod
 	return NewDecideService(
 		fakeFlags{"button": flag, "idle": idle},
 		fakeExperiments{flag.ID: exp},
+		&fakeRecorder{},
 	), exp
 }
 
@@ -147,3 +155,31 @@ func TestNormalizeTargeting(t *testing.T) {
 }
 
 func isInvalidTargeting(err error) bool { return errors.Is(err, errs.ErrInvalidTargeting) }
+
+func TestDecideRecordsOnlyExperimentDecisions(t *testing.T) {
+	svc, exp := newDecideFixture(10000, "")
+	rec := svc.recorder.(*fakeRecorder)
+
+	// флаг без эксперимента, неизвестный флаг и вне аудитории не записываются
+	if _, err := svc.Decide(context.Background(), DecideInput{SubjectID: "u1", FlagKeys: []string{"idle", "nope"}}); err != nil {
+		t.Fatal(err)
+	}
+	if len(rec.saved) != 0 {
+		t.Fatalf("записано %d решений, ожидалось 0", len(rec.saved))
+	}
+
+	items, err := svc.Decide(context.Background(), DecideInput{
+		SubjectID: "u1", Attributes: map[string]string{"country": "RU"}, FlagKeys: []string{"button"},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(rec.saved) != 1 {
+		t.Fatalf("записано %d решений, ожидалось 1", len(rec.saved))
+	}
+	d := rec.saved[0]
+	if d.DecisionID != *items[0].DecisionID || d.ExperimentID != exp.ID || d.SubjectID != "u1" ||
+		d.Variant != items[0].Variant || d.FlagKey != "button" || string(d.Attributes) != `{"country":"RU"}` {
+		t.Errorf("запись решения не совпадает с ответом: %+v", d)
+	}
+}

@@ -24,6 +24,8 @@ func Migrate(dbConn *gorm.DB) error {
 		&models.ExperimentGuardrail{},
 		&models.ExperimentApproval{},
 		&models.ExperimentVersion{},
+		&models.Decision{},
+		&models.Event{},
 		&models.ApproverGroup{},
 		&models.ApproverGroupMember{},
 	}
