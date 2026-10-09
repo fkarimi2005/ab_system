@@ -3,9 +3,11 @@ package service
 import (
 	"AB_system/internal/domain/decision"
 	"AB_system/internal/domain/models"
+	"AB_system/internal/domain/targeting"
 	"AB_system/pkg/errs"
 	"context"
 	"errors"
+	"log/slog"
 
 	"github.com/google/uuid"
 )
@@ -83,7 +85,7 @@ func (s *DecideService) decideOne(ctx context.Context, in DecideInput, key strin
 		return DecideItem{}, err
 	}
 
-	if !matchesTargeting(exp, in.Attributes) {
+	if !matchesTargeting(ctx, exp, in.Attributes) {
 		return def, nil
 	}
 
@@ -107,8 +109,14 @@ func (s *DecideService) decideOne(ctx context.Context, in DecideInput, key strin
 	}, nil
 }
 
-// matchesTargeting — место для правил таргетинга (шаг 2 плана).
-// Пока правил нет, эксперимент подходит всем.
-func matchesTargeting(_ models.Experiment, _ map[string]string) bool {
-	return true
+// matchesTargeting проверяет, подходит ли пользователь под правило эксперимента.
+// Пустое правило подходит всем. Битое правило (не должно случаться: оно проверяется
+// при сохранении) закрывает эксперимент для всех и пишется в лог.
+func matchesTargeting(ctx context.Context, exp models.Experiment, attrs map[string]string) bool {
+	rule, err := targeting.Parse(exp.Targeting)
+	if err != nil {
+		slog.WarnContext(ctx, "invalid stored targeting rule", "experiment_id", exp.ID, "err", err)
+		return false
+	}
+	return rule.Matches(attrs)
 }

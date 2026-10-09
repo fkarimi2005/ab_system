@@ -18,10 +18,12 @@ type CreateExperimentInput struct {
 	Name          string
 	AudienceBP    int
 	Variants      []VariantInput
+	Targeting     []byte // JSON-правило таргетинга; пусто или null — подходят все
 }
 type UpdateExperimentInput struct {
 	Name       string
 	AudienceBP int
+	Targeting  []byte // JSON-правило таргетинга; пусто или null — подходят все
 	Variants   []VariantInput
 }
 

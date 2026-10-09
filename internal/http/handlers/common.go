@@ -65,6 +65,7 @@ func mapError(err error) (int, string) {
 		errors.Is(err, errs.ErrWeightsSumMismatch),
 		errors.Is(err, errs.ErrCommentRequired),
 		errors.Is(err, errs.ErrInvalidApproverGroup),
+		errors.Is(err, errs.ErrInvalidTargeting),
 		errors.Is(err, errs.ErrControlVariantCount):
 		return http.StatusBadRequest, err.Error()
 

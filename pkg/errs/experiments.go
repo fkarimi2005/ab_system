@@ -12,6 +12,7 @@ var (
 	ErrCommentRequired         = errors.New("comment is required")
 	ErrActiveExperimentExists  = errors.New("на этом флаге уже есть запущенный или приостановленный эксперимент")
 	ErrVersionNotFound         = errors.New("версия эксперимента не найдена")
+	ErrInvalidTargeting        = errors.New("некорректное правило таргетинга")
 	ErrInvalidApproverGroup    = errors.New("некорректная группа согласующих")
 	ErrNotInApproverGroup      = errors.New("вы не входите в группу согласующих владельца эксперимента")
 )
