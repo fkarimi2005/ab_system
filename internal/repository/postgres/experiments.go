@@ -43,6 +43,8 @@ func (r *ExperimentRepository) GetExperimentByID(
 	var result models.Experiment
 	err := r.db.WithContext(ctx).
 		Preload("Variants").
+		Preload("Metrics").
+		Preload("Guardrails").
 		First(&result, "id = ?", experimentID).Error
 	if err := repository.CheckError(ctx, op, err); err != nil {
 		return models.Experiment{}, err
@@ -95,6 +97,30 @@ func (r *ExperimentRepository) UpdateExperiment(
 		}
 		if err := tx.Create(&e.Variants).Error; err != nil {
 			return err
+		}
+
+		// метрики и guardrails: так же, удалить старые и вставить новые
+		if err := tx.Where("experiment_id = ?", e.ID).Delete(&models.ExperimentMetric{}).Error; err != nil {
+			return err
+		}
+		if err := tx.Where("experiment_id = ?", e.ID).Delete(&models.ExperimentGuardrail{}).Error; err != nil {
+			return err
+		}
+		if len(e.Metrics) > 0 {
+			for i := range e.Metrics {
+				e.Metrics[i].ExperimentID = e.ID
+			}
+			if err := tx.Create(&e.Metrics).Error; err != nil {
+				return err
+			}
+		}
+		if len(e.Guardrails) > 0 {
+			for i := range e.Guardrails {
+				e.Guardrails[i].ExperimentID = e.ID
+			}
+			if err := tx.Create(&e.Guardrails).Error; err != nil {
+				return err
+			}
 		}
 
 		// 3. снимок версии

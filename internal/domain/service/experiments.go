@@ -15,11 +15,15 @@ import (
 type ExperimentService struct {
 	experimentRepo repository.ExperimentRepository
 	flagRepo       repository.FeatureFlagsRepository
+	metricRepo     metricLookup
 }
 
-func NewExperimentService(experimentRepo repository.ExperimentRepository, flagRepo repository.FeatureFlagsRepository) *ExperimentService {
-	return &ExperimentService{experimentRepo: experimentRepo,
-		flagRepo: flagRepo}
+func NewExperimentService(
+	experimentRepo repository.ExperimentRepository,
+	flagRepo repository.FeatureFlagsRepository,
+	metricRepo metricLookup,
+) *ExperimentService {
+	return &ExperimentService{experimentRepo: experimentRepo, flagRepo: flagRepo, metricRepo: metricRepo}
 }
 func (s *ExperimentService) CreateExperiment(
 	ctx context.Context, ownerID uuid.UUID, in input.CreateExperimentInput,
@@ -45,6 +49,10 @@ func (s *ExperimentService) CreateExperiment(
 	if err != nil {
 		return nil, err
 	}
+	metrics, guardrails, err := s.buildConfig(ctx, in.Metrics, in.Guardrails)
+	if err != nil {
+		return nil, err
+	}
 
 	return s.experimentRepo.CreateExperiment(ctx, &models.Experiment{
 		FeatureFlagID: in.FeatureFlagID,
@@ -52,6 +60,8 @@ func (s *ExperimentService) CreateExperiment(
 		Status:        models.ExperimentStatusDraft, // задаёт сервер
 		AudienceBP:    in.AudienceBP,
 		Targeting:     rule,
+		Metrics:       metrics,
+		Guardrails:    guardrails,
 		Version:       1,       // задаёт сервер
 		OwnerID:       ownerID, // из авторизации
 		Variants:      variants,
@@ -94,11 +104,17 @@ func (s *ExperimentService) UpdateExperiment(
 	if err != nil {
 		return err
 	}
+	metrics, guardrails, err := s.buildConfig(ctx, in.Metrics, in.Guardrails)
+	if err != nil {
+		return err
+	}
 
 	oldVersion := cur.Version
 	cur.Name = in.Name
 	cur.AudienceBP = in.AudienceBP
 	cur.Targeting = rule
+	cur.Metrics = metrics
+	cur.Guardrails = guardrails
 	cur.Variants = variants
 	cur.Version = oldVersion + 1
 

@@ -15,12 +15,46 @@ type VariantRequest struct {
 	IsControl bool   `json:"is_control"`
 }
 
+type MetricRefRequest struct {
+	MetricID uuid.UUID `json:"metric_id" binding:"required"`
+	Role     string    `json:"role" binding:"required"`
+}
+
+type GuardrailRequest struct {
+	MetricID      uuid.UUID `json:"metric_id" binding:"required"`
+	Threshold     float64   `json:"threshold"`
+	Comparison    string    `json:"comparison" binding:"required"`
+	WindowSeconds int       `json:"window_seconds" binding:"required"`
+	Action        string    `json:"action" binding:"required"`
+}
+
+func toMetricInputs(in []MetricRefRequest) []input.MetricRefInput {
+	res := make([]input.MetricRefInput, 0, len(in))
+	for _, m := range in {
+		res = append(res, input.MetricRefInput{MetricID: m.MetricID, Role: m.Role})
+	}
+	return res
+}
+
+func toGuardrailInputs(in []GuardrailRequest) []input.GuardrailInput {
+	res := make([]input.GuardrailInput, 0, len(in))
+	for _, g := range in {
+		res = append(res, input.GuardrailInput{
+			MetricID: g.MetricID, Threshold: g.Threshold, Comparison: g.Comparison,
+			WindowSeconds: g.WindowSeconds, Action: g.Action,
+		})
+	}
+	return res
+}
+
 type CreateExperimentRequest struct {
-	FeatureFlagID uuid.UUID        `json:"feature_flag_id" binding:"required"`
-	Name          string           `json:"name" binding:"required,max=255"`
-	AudienceBP    int              `json:"audience_bp" binding:"required,gt=0,lte=10000"`
-	Targeting     json.RawMessage  `json:"targeting"`
-	Variants      []VariantRequest `json:"variants" binding:"required,min=1,max=20,dive"`
+	FeatureFlagID uuid.UUID          `json:"feature_flag_id" binding:"required"`
+	Name          string             `json:"name" binding:"required,max=255"`
+	AudienceBP    int                `json:"audience_bp" binding:"required,gt=0,lte=10000"`
+	Targeting     json.RawMessage    `json:"targeting"`
+	Metrics       []MetricRefRequest `json:"metrics" binding:"max=20,dive"`
+	Guardrails    []GuardrailRequest `json:"guardrails" binding:"max=20,dive"`
+	Variants      []VariantRequest   `json:"variants" binding:"required,min=1,max=20,dive"`
 }
 
 func (r CreateExperimentRequest) ToInput() input.CreateExperimentInput {
@@ -29,6 +63,8 @@ func (r CreateExperimentRequest) ToInput() input.CreateExperimentInput {
 		Name:          r.Name,
 		AudienceBP:    r.AudienceBP,
 		Targeting:     r.Targeting,
+		Metrics:       toMetricInputs(r.Metrics),
+		Guardrails:    toGuardrailInputs(r.Guardrails),
 	}
 	for _, v := range r.Variants {
 		in.Variants = append(in.Variants, input.VariantInput{
@@ -47,16 +83,31 @@ type VariantResponse struct {
 }
 
 type ExperimentResponse struct {
-	ID            uuid.UUID         `json:"id"`
-	FeatureFlagID uuid.UUID         `json:"feature_flag_id"`
-	Name          string            `json:"name"`
-	Status        string            `json:"status"`
-	AudienceBP    int               `json:"audience_bp"`
-	Targeting     json.RawMessage   `json:"targeting,omitempty"`
-	Version       int               `json:"version"`
-	OwnerID       uuid.UUID         `json:"owner_id"`
-	Variants      []VariantResponse `json:"variants"`
-	CreatedAt     time.Time         `json:"created_at"`
+	ID            uuid.UUID           `json:"id"`
+	FeatureFlagID uuid.UUID           `json:"feature_flag_id"`
+	Name          string              `json:"name"`
+	Status        string              `json:"status"`
+	AudienceBP    int                 `json:"audience_bp"`
+	Targeting     json.RawMessage     `json:"targeting,omitempty"`
+	Metrics       []MetricRefResponse `json:"metrics"`
+	Guardrails    []GuardrailResponse `json:"guardrails"`
+	Version       int                 `json:"version"`
+	OwnerID       uuid.UUID           `json:"owner_id"`
+	Variants      []VariantResponse   `json:"variants"`
+	CreatedAt     time.Time           `json:"created_at"`
+}
+
+type MetricRefResponse struct {
+	MetricID uuid.UUID `json:"metric_id"`
+	Role     string    `json:"role"`
+}
+
+type GuardrailResponse struct {
+	MetricID      uuid.UUID `json:"metric_id"`
+	Threshold     float64   `json:"threshold"`
+	Comparison    string    `json:"comparison"`
+	WindowSeconds int       `json:"window_seconds"`
+	Action        string    `json:"action"`
 }
 
 func NewExperimentResponse(e *models.Experiment) ExperimentResponse {
@@ -64,7 +115,18 @@ func NewExperimentResponse(e *models.Experiment) ExperimentResponse {
 		ID: e.ID, FeatureFlagID: e.FeatureFlagID, Name: e.Name,
 		Status: string(e.Status), AudienceBP: e.AudienceBP, Targeting: e.Targeting, Version: e.Version,
 		OwnerID: e.OwnerID, CreatedAt: e.CreatedAt,
-		Variants: make([]VariantResponse, 0, len(e.Variants)),
+		Variants:   make([]VariantResponse, 0, len(e.Variants)),
+		Metrics:    make([]MetricRefResponse, 0, len(e.Metrics)),
+		Guardrails: make([]GuardrailResponse, 0, len(e.Guardrails)),
+	}
+	for _, m := range e.Metrics {
+		res.Metrics = append(res.Metrics, MetricRefResponse{MetricID: m.MetricID, Role: string(m.Role)})
+	}
+	for _, g := range e.Guardrails {
+		res.Guardrails = append(res.Guardrails, GuardrailResponse{
+			MetricID: g.MetricID, Threshold: g.Threshold, Comparison: string(g.Comparison),
+			WindowSeconds: g.WindowSeconds, Action: string(g.Action),
+		})
 	}
 	for _, v := range e.Variants {
 		res.Variants = append(res.Variants, VariantResponse{
@@ -74,7 +136,10 @@ func NewExperimentResponse(e *models.Experiment) ExperimentResponse {
 	return res
 }
 func (r UpdateExperimentRequest) ToInput() input.UpdateExperimentInput {
-	in := input.UpdateExperimentInput{Name: r.Name, AudienceBP: r.AudienceBP, Targeting: r.Targeting}
+	in := input.UpdateExperimentInput{
+		Name: r.Name, AudienceBP: r.AudienceBP, Targeting: r.Targeting,
+		Metrics: toMetricInputs(r.Metrics), Guardrails: toGuardrailInputs(r.Guardrails),
+	}
 	for _, v := range r.Variants {
 		in.Variants = append(in.Variants, input.VariantInput{
 			Name: v.Name, Value: v.Value, WeightBP: v.WeightBP, IsControl: v.IsControl,
@@ -84,10 +149,12 @@ func (r UpdateExperimentRequest) ToInput() input.UpdateExperimentInput {
 }
 
 type UpdateExperimentRequest struct {
-	Name       string           `json:"name" binding:"required,max=255"`
-	AudienceBP int              `json:"audience_bp" binding:"required,gt=0,lte=10000"`
-	Targeting  json.RawMessage  `json:"targeting"`
-	Variants   []VariantRequest `json:"variants" binding:"required,min=1,max=20,dive"`
+	Name       string             `json:"name" binding:"required,max=255"`
+	AudienceBP int                `json:"audience_bp" binding:"required,gt=0,lte=10000"`
+	Targeting  json.RawMessage    `json:"targeting"`
+	Metrics    []MetricRefRequest `json:"metrics" binding:"max=20,dive"`
+	Guardrails []GuardrailRequest `json:"guardrails" binding:"max=20,dive"`
+	Variants   []VariantRequest   `json:"variants" binding:"required,min=1,max=20,dive"`
 }
 type VersionResponse struct {
 	Version   int             `json:"version"`

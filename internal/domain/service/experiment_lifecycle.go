@@ -100,6 +100,8 @@ func (s *ExperimentService) validateForReview(ctx context.Context, e models.Expe
 	if err := validation.ValidateVariantValues(flag.ValueType, e.Variants); err != nil {
 		return err
 	}
-	_, err = normalizeTargeting(e.Targeting)
-	return err
+	if _, err := normalizeTargeting(e.Targeting); err != nil {
+		return err
+	}
+	return s.checkConfigForReview(ctx, e)
 }
