@@ -76,7 +76,7 @@ func (r *ExperimentRepository) UpdateExperiment(
 			Omit(clause.Associations).
 			Where("id = ? AND version = ? AND status = ?",
 				e.ID, expectedVersion, models.ExperimentStatusDraft).
-			Select("Name", "AudienceBP", "Version").
+			Select("Name", "AudienceBP", "Targeting", "Version").
 			Updates(e)
 		if res.Error != nil {
 			return res.Error

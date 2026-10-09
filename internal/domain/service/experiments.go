@@ -41,12 +41,17 @@ func (s *ExperimentService) CreateExperiment(
 	if err := validation.ValidateVariantValues(flag.ValueType, variants); err != nil {
 		return nil, err
 	}
+	rule, err := normalizeTargeting(in.Targeting)
+	if err != nil {
+		return nil, err
+	}
 
 	return s.experimentRepo.CreateExperiment(ctx, &models.Experiment{
 		FeatureFlagID: in.FeatureFlagID,
 		Name:          in.Name,
 		Status:        models.ExperimentStatusDraft, // задаёт сервер
 		AudienceBP:    in.AudienceBP,
+		Targeting:     rule,
 		Version:       1,       // задаёт сервер
 		OwnerID:       ownerID, // из авторизации
 		Variants:      variants,
@@ -85,9 +90,15 @@ func (s *ExperimentService) UpdateExperiment(
 		return err
 	}
 
+	rule, err := normalizeTargeting(in.Targeting)
+	if err != nil {
+		return err
+	}
+
 	oldVersion := cur.Version
 	cur.Name = in.Name
 	cur.AudienceBP = in.AudienceBP
+	cur.Targeting = rule
 	cur.Variants = variants
 	cur.Version = oldVersion + 1
 

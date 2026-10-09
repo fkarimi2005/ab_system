@@ -1,6 +1,7 @@
 package models
 
 import (
+	"encoding/json"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
 	"time"
@@ -16,6 +17,9 @@ type Experiment struct {
 	Status        ExperimentStatus `json:"status" gorm:"not null;type:varchar(35);default:'draft'"`
 
 	AudienceBP int `json:"audience_bp" gorm:"not null;check:chk_experiments_audience,audience_bp > 0 AND audience_bp <= 10000"`
+
+	// Targeting — правило таргетинга (JSON, см. пакет targeting); пусто — подходят все.
+	Targeting json.RawMessage `json:"targeting,omitempty" gorm:"type:jsonb"`
 
 	Version int       `json:"version" gorm:"not null;default:1"`
 	OwnerID uuid.UUID `json:"owner_id" gorm:"type:uuid;not null;index"`

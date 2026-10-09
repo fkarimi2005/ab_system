@@ -19,6 +19,7 @@ type CreateExperimentRequest struct {
 	FeatureFlagID uuid.UUID        `json:"feature_flag_id" binding:"required"`
 	Name          string           `json:"name" binding:"required,max=255"`
 	AudienceBP    int              `json:"audience_bp" binding:"required,gt=0,lte=10000"`
+	Targeting     json.RawMessage  `json:"targeting"`
 	Variants      []VariantRequest `json:"variants" binding:"required,min=1,max=20,dive"`
 }
 
@@ -27,6 +28,7 @@ func (r CreateExperimentRequest) ToInput() input.CreateExperimentInput {
 		FeatureFlagID: r.FeatureFlagID,
 		Name:          r.Name,
 		AudienceBP:    r.AudienceBP,
+		Targeting:     r.Targeting,
 	}
 	for _, v := range r.Variants {
 		in.Variants = append(in.Variants, input.VariantInput{
@@ -50,6 +52,7 @@ type ExperimentResponse struct {
 	Name          string            `json:"name"`
 	Status        string            `json:"status"`
 	AudienceBP    int               `json:"audience_bp"`
+	Targeting     json.RawMessage   `json:"targeting,omitempty"`
 	Version       int               `json:"version"`
 	OwnerID       uuid.UUID         `json:"owner_id"`
 	Variants      []VariantResponse `json:"variants"`
@@ -59,7 +62,7 @@ type ExperimentResponse struct {
 func NewExperimentResponse(e *models.Experiment) ExperimentResponse {
 	res := ExperimentResponse{
 		ID: e.ID, FeatureFlagID: e.FeatureFlagID, Name: e.Name,
-		Status: string(e.Status), AudienceBP: e.AudienceBP, Version: e.Version,
+		Status: string(e.Status), AudienceBP: e.AudienceBP, Targeting: e.Targeting, Version: e.Version,
 		OwnerID: e.OwnerID, CreatedAt: e.CreatedAt,
 		Variants: make([]VariantResponse, 0, len(e.Variants)),
 	}
@@ -71,7 +74,7 @@ func NewExperimentResponse(e *models.Experiment) ExperimentResponse {
 	return res
 }
 func (r UpdateExperimentRequest) ToInput() input.UpdateExperimentInput {
-	in := input.UpdateExperimentInput{Name: r.Name, AudienceBP: r.AudienceBP}
+	in := input.UpdateExperimentInput{Name: r.Name, AudienceBP: r.AudienceBP, Targeting: r.Targeting}
 	for _, v := range r.Variants {
 		in.Variants = append(in.Variants, input.VariantInput{
 			Name: v.Name, Value: v.Value, WeightBP: v.WeightBP, IsControl: v.IsControl,
@@ -83,6 +86,7 @@ func (r UpdateExperimentRequest) ToInput() input.UpdateExperimentInput {
 type UpdateExperimentRequest struct {
 	Name       string           `json:"name" binding:"required,max=255"`
 	AudienceBP int              `json:"audience_bp" binding:"required,gt=0,lte=10000"`
+	Targeting  json.RawMessage  `json:"targeting"`
 	Variants   []VariantRequest `json:"variants" binding:"required,min=1,max=20,dive"`
 }
 type VersionResponse struct {
