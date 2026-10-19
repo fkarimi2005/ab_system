@@ -1,6 +1,7 @@
 package main
 
 import (
+	"AB_system/pkg/logger"
 	"context"
 	"log/slog"
 	"os"
@@ -9,8 +10,6 @@ import (
 
 	"AB_system/internal/app"
 	"AB_system/internal/configs"
-	"AB_system/logger"
-
 	"github.com/joho/godotenv"
 )
 
